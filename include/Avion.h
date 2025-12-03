@@ -3,37 +3,95 @@
 #define AVION_H
 
 #include <string>
-#include "Position3D.h"
-#include "Vitesse.h"
-#include "Trajectoire.h"
+#include <cmath>
+#include <iostream>
 
+// Énumérations
 enum class EtatAvion {
-    EN_ROUTE,
-    EN_APPROCHE,
-    EN_ATTERRISSAGE,
-    AU_SOL,
-    EN_DECOLLAGE
+    PARKING,
+    ROULAGE_DECOLLAGE,
+    DECOLLAGE,
+    MONTEE,
+    CROISIERE,
+    DESCENTE,
+    APPROCHE,
+    ATTERRISSAGE,
+    ROULAGE_ARRIVEE
+};
+
+// Structure Position
+struct Position {
+    double x;           // Coordonnée X (en mètres ou km)
+    double y;           // Coordonnée Y (en mètres ou km)
+    double altitude;    // Altitude (en mètres)
+
+    Position(double x = 0, double y = 0, double altitude = 0)
+        : x(x), y(y), altitude(altitude) {
+    }
+
+    void afficher() const {
+        std::cout << "Position: x=" << x << "m, y=" << y << "m, altitude=" << altitude << "m" << std::endl;
+    }
 };
 
 class Avion {
 private:
-    std::string code;
-    Position3D position;
-    Vitesse vitesse;
+    // Identification
+    std::string nom;
+
+    // Position et mouvement
+    Position position;
+    double vitesse;                     // Vitesse actuelle (m/s)
+    double cap;                         // Direction (0-360 degrés)
+    double altitude_cible;              // Altitude à atteindre
+
+    // Caractéristiques de vol
+    double vitesse_croisiere;           // Vitesse de croisière (m/s)
+    double vitesse_montee;              // Vitesse verticale en montée (m/s)
+    double vitesse_descente;            // Vitesse verticale en descente (m/s)
+    double vitesse_roulage;             // Vitesse au sol (m/s)
+
+    // État
     EtatAvion etat;
-    double carburant;
-    std::string positionParking;
+
+    // Destination
+    Position destination;
 
 public:
-    Avion(const std::string& code, const Position3D& pos, const Vitesse& vit);
+    // Constructeur
+    Avion(const std::string& nom, const Position& pos_depart, const Position& dest);
 
-    std::string getCode() const { return code; }
-    Position3D getPosition() const { return position; }
+    // Getters
+    std::string getNom() const { return nom; }
+    Position getPosition() const { return position; }
+    double getVitesse() const { return vitesse; }
+    double getAltitude() const { return position.altitude; }
     EtatAvion getEtat() const { return etat; }
 
-    void setPosition(const Position3D& pos) { position = pos; }
-    void setEtat(EtatAvion e) { etat = e; }
-    void setPositionParking(const std::string& p) { positionParking = p; }
+    // Méthode principale de mise à jour
+    void update(double dt);  // dt = delta temps en secondes
+
+    // Affichage
+    void afficherEtat() const;
+    std::string getEtatString() const;
+
+    // Vérification fin de vol
+    bool volTermine() const;
+
+private:
+    // Méthodes internes de gestion du vol
+    void updateRoulageDecollage(double dt);
+    void updateDecollage(double dt);
+    void updateMontee(double dt);
+    void updateCroisiere(double dt);
+    void updateDescente(double dt);
+    void updateApproche(double dt);
+    void updateAtterrissage(double dt);
+    void updateRoulageArrivee(double dt);
+
+    // Utilitaires
+    double distanceVers(const Position& pos) const;
+    double calculerCap(const Position& cible) const;
 };
 
-#endif
+#endif // AVION_H

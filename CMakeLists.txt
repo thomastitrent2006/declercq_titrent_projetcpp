@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.31)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(PROJECT_NAME ProjetCPP)
+project(${PROJECT_NAME})
+
+add_executable(${PROJECT_NAME} )
+install(TARGETS ${PROJECT_NAME} DESTINATION bin)

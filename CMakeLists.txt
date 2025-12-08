@@ -21,5 +21,5 @@ link_libraries(SFML::Graphics SFML::Window SFML::System)
 add_executable(simulation 
     src/Avion.cpp
     src/main.cpp
-)
+ "src/ControleAerien.cpp")
 

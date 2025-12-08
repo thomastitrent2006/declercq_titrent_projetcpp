@@ -8,6 +8,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(simulation 
     src/Avion.cpp
     src/main.cpp
-)
+ "src/ControleAerien.cpp")
 
 target_include_directories(simulation PRIVATE include)

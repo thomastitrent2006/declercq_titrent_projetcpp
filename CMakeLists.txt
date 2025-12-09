@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(SFML_STATIC_LIBRARIES TRUE)
 
 if(MSVC)
-    set(SFML_DIR "C:/Program Files/SFML_3.0.2/lib/cmake/SFML")
+    set(SFML_DIR "C:/SFML_3.0.2/lib/cmake/SFML")
 endif(MSVC)
 
     set(DEFS "PATH_IMG=\"${CMAKE_CURRENT_SOURCE_DIR}/img/\"")

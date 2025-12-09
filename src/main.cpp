@@ -1,6 +1,60 @@
 ﻿#include "../include/Avion.h"
 #include <iostream>
 #include <ctime>
+#include <vector>
+#include <SFML/Graphics.hpp>
+using namespace sf;
+
+const int WINDOW_SIZE_X = 1200;
+const int WINDOW_SIZE_Y = 800;
+
+#ifdef _MSC_VER
+// #pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+#define _PATHIMG "C:/SFML_3.0.2/img/"
+#else
+#define _PATHIMG "./img/"
+#endif
+
+void initializeSimulation() {
+    RenderWindow window(VideoMode({ WINDOW_SIZE_X, WINDOW_SIZE_Y }), "Air Traffic Control");
+    window.setFramerateLimit(120);
+
+    // Charger la carte
+    Texture backgroundImage;
+    if (!backgroundImage.loadFromFile(std::string(_PATHIMG) + "france.png")) {
+        std::cerr << "Erreur chargement carte" << std::endl;
+        return;
+    }
+    Sprite backgroundSprite(backgroundImage);
+    backgroundSprite.scale({ 0.9f,0.9f });
+
+	// Charger les aéroports 
+    Texture aeroportImage;
+    if (!aeroportImage.loadFromFile(std::string(_PATHIMG) + "airport.png")) {
+        std::cerr << "Erreur chargement airport" << std::endl;
+        return;
+    }
+    Sprite airportSprite(aeroportImage);
+    airportSprite.scale({ 0.9f,0.9f });
+
+
+
+    while (window.isOpen()) {
+        while (const std::optional<Event> event = window.pollEvent()) {
+            if ((event->is<sf::Event::KeyPressed>() &&
+                event->getIf<sf::Event::KeyPressed>()->code == sf::Keyboard::Key::Escape) ||
+                event->is<sf::Event::Closed>()) {
+                window.close();
+            }
+        }
+
+        window.clear();
+        window.draw(backgroundSprite);
+        window.draw(airportSprite);
+        window.display();
+    }
+}
+
 
 // Fonction de pause simple (sans threads)
 void pause(int milliseconds) {
@@ -12,6 +66,7 @@ void pause(int milliseconds) {
 }
 
 int main() {
+    initializeSimulation(); 
     // Création de l'avion
     Position depart(0, 0, 0);
     Position arrivee(100000, 50000, 0);

@@ -35,7 +35,8 @@ void initializeSimulation() {
         return;
     }
     Sprite airportSprite(aeroportImage);
-    airportSprite.scale({ 0.9f,0.9f });
+    airportSprite.scale({ 0.3f,0.3f });
+    airportSprite.setPosition({270,10});
 
 
 

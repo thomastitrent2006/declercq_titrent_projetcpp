@@ -38,6 +38,15 @@ void initializeSimulation() {
     airportSprite.scale({ 0.3f,0.3f });
     airportSprite.setPosition({600,80});
 
+   Texture airplane;
+    if (!airplane.loadFromFile(std::string(_PATHIMG) + "airplane.png")) {
+        std::cerr << "Erreur chargement avion" << std::endl;
+        return;
+    }
+    Sprite Spriteairplane(airplane);
+    Spriteairplane.scale({ 0.15f, 0.15f });
+    Spriteairplane.setPosition({ WINDOW_SIZE_X / 2.0f, WINDOW_SIZE_Y / 2.0f });
+   
 
 
     while (window.isOpen()) {
@@ -52,6 +61,7 @@ void initializeSimulation() {
         window.clear();
         window.draw(backgroundSprite);
         window.draw(airportSprite);
+		window.draw(Spriteairplane);
         window.display();
     }
   

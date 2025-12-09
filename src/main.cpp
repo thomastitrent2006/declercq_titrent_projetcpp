@@ -5,8 +5,8 @@
 #include <SFML/Graphics.hpp>
 using namespace sf;
 
-const int WINDOW_SIZE_X = 713;
-const int WINDOW_SIZE_Y = 775;
+const int WINDOW_SIZE_X = 1200;
+const int WINDOW_SIZE_Y = 1104;
 
 #ifdef _MSC_VER
 // #pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
@@ -26,8 +26,7 @@ void initializeSimulation() {
         return;
     }
     Sprite backgroundSprite(backgroundImage);
-    backgroundSprite.scale({ 0.9f, 0.9f });
-    backgroundSprite.setPosition({0,0});
+    
 
 	// Charger les aéroports 
     Texture aeroportImage;
@@ -37,7 +36,7 @@ void initializeSimulation() {
     }
     Sprite airportSprite(aeroportImage);
     airportSprite.scale({ 0.3f,0.3f });
-    airportSprite.setPosition({270,10});
+    airportSprite.setPosition({600,80});
 
 
 

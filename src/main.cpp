@@ -55,6 +55,7 @@ void initializeSimulation() {
         window.draw(airportSprite);
         window.display();
     }
+  
 }
 
 
@@ -69,6 +70,7 @@ void pause(int milliseconds) {
 
 int main() {
     initializeSimulation(); 
+
     // Création de l'avion
     Position depart(0, 0, 0);
     Position arrivee(100000, 50000, 0);

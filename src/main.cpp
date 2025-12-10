@@ -1,9 +1,9 @@
 ﻿#include "../include/Avion.h"
-#include "../include/Trajectoire.h"
 #include <iostream>
 #include <ctime>
 #include <vector>
 #include <SFML/Graphics.hpp>
+#include <cmath>
 
 using namespace sf;
 
@@ -16,9 +16,30 @@ const int WINDOW_SIZE_Y = 1104;
 #define _PATHIMG "./img/"
 #endif
 
+// Fonction pour convertir les coordonnées monde en coordonnées écran
+Vector2f worldToScreen(const Position& posAvion, const Position& depart, const Position& arrivee,
+    const Vector2f& screenStart, const Vector2f& screenEnd) {
+    double total_dx = arrivee.x - depart.x;
+    double total_dy = arrivee.y - depart.y;
+
+    double current_dx = posAvion.x - depart.x;
+    double current_dy = posAvion.y - depart.y;
+
+    if (total_dx == 0) total_dx = 1;
+    if (total_dy == 0) total_dy = 1;
+
+    double ratio_x = current_dx / total_dx;
+    double ratio_y = current_dy / total_dy;
+
+    float screen_x = screenStart.x + ratio_x * (screenEnd.x - screenStart.x);
+    float screen_y = screenStart.y + ratio_y * (screenEnd.y - screenStart.y);
+
+    return Vector2f(screen_x, screen_y);
+}
+
 void initializeSimulation() {
     RenderWindow window(VideoMode({ WINDOW_SIZE_X, WINDOW_SIZE_Y }), "Air Traffic Control");
-    window.setFramerateLimit(120);
+    window.setFramerateLimit(60);
 
     // Charger la carte
     Texture backgroundImage;
@@ -28,7 +49,7 @@ void initializeSimulation() {
     }
     Sprite backgroundSprite(backgroundImage);
 
-    // Charger les aéroports 
+    // Charger l'aéroport
     Texture aeroportImage;
     if (!aeroportImage.loadFromFile(std::string(_PATHIMG) + "airport.png")) {
         std::cerr << "Erreur chargement airport" << std::endl;
@@ -47,29 +68,19 @@ void initializeSimulation() {
     Sprite Spriteairplane(airplane);
     Spriteairplane.scale({ 0.15f, 0.15f });
 
-    // Centrer l'origine du sprite
-    FloatRect bounds = Spriteairplane.getLocalBounds();
-    Spriteairplane.setOrigin(bounds.size.x / 2.0f, bounds.size.y / 2.0f);
+    // Positions
+    Vector2f positionDepartEcran(WINDOW_SIZE_X / 2.0f, WINDOW_SIZE_Y / 2.0f);
+    Vector2f positionArriveeEcran(600, 80);
 
-    Spriteairplane.setPosition({ WINDOW_SIZE_X / 2.0f, WINDOW_SIZE_Y / 2.0f });
-
-    // Créer l'avion et la trajectoire
     Position depart(0, 0, 0);
     Position arrivee(100000, 50000, 0);
     Avion avion("AF123", depart, arrivee);
 
-    Vector2f positionDepartEcran(WINDOW_SIZE_X / 2.0f, WINDOW_SIZE_Y / 2.0f);
-    Vector2f positionArriveeEcran(600, 80);
-
-    // Créer l'objet Trajectoire
-    Trajectoire trajectoire(depart, arrivee, positionDepartEcran, positionArriveeEcran);
+    Spriteairplane.setPosition(positionDepartEcran);
 
     Clock clock;
 
-    std::cout << "========================================" << std::endl;
-    std::cout << "   SIMULATION DE VOL - " << avion.getNom() << std::endl;
-    std::cout << "========================================" << std::endl;
-
+    // Boucle principale
     while (window.isOpen() && !avion.volTermine()) {
         while (const std::optional<Event> event = window.pollEvent()) {
             if ((event->is<sf::Event::KeyPressed>() &&
@@ -79,34 +90,23 @@ void initializeSimulation() {
             }
         }
 
-        // Mise à jour de la simulation
         float deltaTime = clock.restart().asSeconds();
-        avion.update(deltaTime * 10); // Facteur de vitesse pour accélérer
 
-        // Mettre à jour le sprite via la trajectoire
-        trajectoire.updateSprite(Spriteairplane, avion);
+        // Mise à jour de l'avion avec simulation accélérée
+        avion.update(deltaTime * 50);
 
-        // Affichage (optionnel pour debug)
-        // std::cout << "Angle: " << trajectoire.getAngle() << " degrés" << std::endl;
+        // Mise à jour de la position du sprite
+        posActuelle = avion.getPosition();
+        Vector2f screenPos = worldToScreen(posActuelle, depart, arrivee,
+            positionDepartEcran, positionArriveeEcran);
+        Spriteairplane.setPosition(screenPos);
 
+        // Rendu
         window.clear();
         window.draw(backgroundSprite);
         window.draw(airportSprite);
         window.draw(Spriteairplane);
         window.display();
-    }
-
-    std::cout << std::endl;
-    std::cout << "========================================" << std::endl;
-    std::cout << "   FIN DE LA SIMULATION" << std::endl;
-    std::cout << "========================================" << std::endl;
-}
-
-void pause(int milliseconds) {
-    clock_t start = clock();
-    clock_t end = start + (milliseconds * CLOCKS_PER_SEC / 1000);
-    while (clock() < end) {
-        // Attente active
     }
 }
 

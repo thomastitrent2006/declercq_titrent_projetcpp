@@ -96,7 +96,7 @@ void initializeSimulation() {
         avion.update(deltaTime * 50);
 
         // Mise à jour de la position du sprite
-        posActuelle = avion.getPosition();
+        Position posActuelle = avion.getPosition();
         Vector2f screenPos = worldToScreen(posActuelle, depart, arrivee,
             positionDepartEcran, positionArriveeEcran);
         Spriteairplane.setPosition(screenPos);

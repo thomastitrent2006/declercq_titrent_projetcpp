@@ -80,6 +80,8 @@ void initializeSimulation() {
 
     Clock clock;
 
+    Position posActuelle;
+
     // Boucle principale
     while (window.isOpen() && !avion.volTermine()) {
         while (const std::optional<Event> event = window.pollEvent()) {

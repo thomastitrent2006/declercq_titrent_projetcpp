@@ -49,15 +49,43 @@ void initializeSimulation() {
     }
     Sprite backgroundSprite(backgroundImage);
 
+    std::vector<Sprite> airportSprites;
+
     // Charger l'aéroport
     Texture aeroportImage;
     if (!aeroportImage.loadFromFile(std::string(_PATHIMG) + "airport.png")) {
         std::cerr << "Erreur chargement airport" << std::endl;
         return;
     }
-    Sprite airportSprite(aeroportImage);
-    airportSprite.scale({ 0.3f, 0.3f });
-    airportSprite.setPosition({ 600, 80 });
+    Sprite airport1(aeroportImage);
+    airport1.scale({ 0.3f, 0.3f });
+    airport1.setPosition({ 600, 80 });
+    airportSprites.push_back(airport1);
+
+    Sprite airport2(aeroportImage);
+    airport2.scale({ 0.3f, 0.3f });
+    airport2.setPosition({ 560, 280 });
+    airportSprites.push_back(airport2);
+
+    Sprite airport3(aeroportImage);
+    airport3.scale({ 0.3f, 0.3f });
+    airport3.setPosition({ 470, 780 });
+    airportSprites.push_back(airport3);
+
+    Sprite airport4(aeroportImage);
+    airport4.scale({ 0.3f, 0.3f });
+    airport4.setPosition({ 280, 450 });
+    airportSprites.push_back(airport4);
+
+    Sprite airport5(aeroportImage);
+    airport5.scale({ 0.3f, 0.3f });
+    airport5.setPosition({ 750, 620 });
+    airportSprites.push_back(airport5);
+
+    Sprite airport6(aeroportImage);
+    airport6.scale({ 0.2f, 0.2f });
+    airport6.setPosition({ 800, 850 });
+    airportSprites.push_back(airport6);
 
     // Charger l'avion
     Texture airplane;
@@ -98,7 +126,7 @@ void initializeSimulation() {
         avion.update(deltaTime * 50);
 
         // Mise à jour de la position du sprite
-        posActuelle = avion.getPosition();
+        Position posActuelle = avion.getPosition();
         Vector2f screenPos = worldToScreen(posActuelle, depart, arrivee,
             positionDepartEcran, positionArriveeEcran);
         Spriteairplane.setPosition(screenPos);
@@ -106,7 +134,11 @@ void initializeSimulation() {
         // Rendu
         window.clear();
         window.draw(backgroundSprite);
-        window.draw(airportSprite);
+        // Dessiner tous les aéroports
+        for (const auto& airport : airportSprites) {
+            window.draw(airport);
+        }
+        
         window.draw(Spriteairplane);
         window.display();
     }

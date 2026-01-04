@@ -1,57 +1,44 @@
 #include "../include/ControleurBase.h"
 #include <chrono>
-#include <sstream>
-#include <algorithm>
-#include <iomanip>
-
-std::string Message::toJSON() const {
-    std::ostringstream oss;
-    oss << "{"
-        << "\"expediteur\":\"" << expediteur << "\","
-        << "\"destinataire\":\"" << destinataire << "\","
-        << "\"type\":\"" << type << "\","
-        << "\"avionId\":\"" << avionId << "\","
-        << "\"contenu\":\"" << contenu << "\","
-        << "\"timestamp\":" << timestamp
-        << "}";
-    return oss.str();
-}
+#include <iostream>
 
 ControleurBase::ControleurBase(const std::string& _nom)
     : nom(_nom), running(false) {
     // Ouvrir le fichier de log
-    std::string filename = "log_" + nom + ".json";
-    logFile.open(filename, std::ios::app);
+    std::string logFileName = "log_" + nom + ".json";
+    logFile.open(logFileName, std::ios::app);
     if (logFile.is_open()) {
-        logFile << "{\"controleur\":\"" << nom << "\",\"logs\":[\n";
+        logFile << "[\n";
+        logFile.flush();
     }
 }
 
 ControleurBase::~ControleurBase() {
-    arreter();
+    // S'assurer que le thread est arrêté
+    if (running.load()) {
+        arreter();
+    }
+
     if (logFile.is_open()) {
-        logFile << "\n]}\n";
+        logFile << "]\n";
         logFile.close();
     }
 }
 
 void ControleurBase::ajouterAvion(Avion* avion) {
+    if (avion == nullptr) return;
+
     std::lock_guard<std::mutex> lock(mtx);
     avionsSousControle.push_back(avion);
-
-    std::ostringstream oss;
-    oss << "Avion " << avion->getNom() << " ajouté au contrôle";
-    logAction("AJOUT_AVION", oss.str());
 }
 
 void ControleurBase::retirerAvion(const std::string& avionId) {
     std::lock_guard<std::mutex> lock(mtx);
-    auto it = std::remove_if(avionsSousControle.begin(), avionsSousControle.end(),
-        [&avionId](Avion* a) { return a->getNom() == avionId; });
-
-    if (it != avionsSousControle.end()) {
-        avionsSousControle.erase(it, avionsSousControle.end());
-        logAction("RETRAIT_AVION", "Avion " + avionId + " retiré du contrôle");
+    for (size_t i = 0; i < avionsSousControle.size(); i++) {
+        if (avionsSousControle[i]->getNom() == avionId) {
+            avionsSousControle.erase(avionsSousControle.begin() + i);
+            break;
+        }
     }
 }
 
@@ -79,31 +66,87 @@ void ControleurBase::logMessage(const Message& msg) {
 }
 
 void ControleurBase::logAction(const std::string& action, const std::string& details) {
-    auto now = std::chrono::system_clock::now();
-    auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-        now.time_since_epoch()).count();
+    Message msg;
+    msg.expediteur = nom;
+    msg.destinataire = "LOG";
+    msg.type = action;
+    msg.contenu = details;
+    msg.avionId = "";
+    msg.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()
+    ).count();
 
-    if (logFile.is_open()) {
-        logFile << "{\"action\":\"" << action << "\","
-            << "\"details\":\"" << details << "\","
-            << "\"timestamp\":" << timestamp << "},\n";
-        logFile.flush();
-    }
+    logMessage(msg);
 }
 
+// ========== IMPLÉMENTATION SÉCURISÉE DE demarrer() et arreter() ==========
+
 void ControleurBase::demarrer() {
-    running = true;
-    workerThread = std::thread([this]() {
-        while (running) {
-            processLogic();
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-        });
+    // Vérifier si déjà démarré
+    bool expected = false;
+    if (!running.compare_exchange_strong(expected, true)) {
+        std::cout << "[" << nom << "] Déjà démarré\n";
+        return;
+    }
+
+    try {
+        workerThread = std::thread([this]() {
+            std::cout << "[" << nom << "] Thread démarré\n";
+
+            while (running.load()) {
+                try {
+                    // Appeler la logique spécifique (CCR, APP ou TWR)
+                    processLogic();
+
+                    // Pause de 100ms entre chaque cycle
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                }
+                catch (const std::exception& e) {
+                    std::cerr << "[" << nom << "] Erreur dans processLogic: " << e.what() << "\n";
+                    // Continuer malgré l'erreur
+                }
+                catch (...) {
+                    std::cerr << "[" << nom << "] Erreur inconnue dans processLogic\n";
+                }
+            }
+
+            std::cout << "[" << nom << "] Thread arrêté\n";
+            });
+    }
+    catch (const std::system_error& e) {
+        std::cerr << "[" << nom << "] ERREUR CRÉATION THREAD: " << e.what() << "\n";
+        running.store(false);
+        throw;  // Relancer l'exception
+    }
 }
 
 void ControleurBase::arreter() {
-    running = false;
-    if (workerThread.joinable()) {
-        workerThread.join();
+    // Vérifier si déjà arrêté
+    bool expected = true;
+    if (!running.compare_exchange_strong(expected, false)) {
+        return;  // Déjà arrêté
     }
+
+    // Attendre que le thread se termine
+    if (workerThread.joinable()) {
+        try {
+            workerThread.join();
+        }
+        catch (const std::system_error& e) {
+            std::cerr << "[" << nom << "] Erreur lors de l'arrêt du thread: " << e.what() << "\n";
+        }
+    }
+}
+
+// ========== IMPLÉMENTATION DE Message::toJSON() ==========
+
+std::string Message::toJSON() const {
+    return "{"
+        "\"expediteur\":\"" + expediteur + "\","
+        "\"destinataire\":\"" + destinataire + "\","
+        "\"type\":\"" + type + "\","
+        "\"avionId\":\"" + avionId + "\","
+        "\"contenu\":\"" + contenu + "\","
+        "\"timestamp\":" + std::to_string(timestamp) +
+        "}";
 }

@@ -16,7 +16,7 @@ struct Message {
     std::string type;      // "DEMANDE_ATTERRISSAGE", "AUTORISATION", etc.
     std::string avionId;
     std::string contenu;
-    long timestamp;
+    long timestamp = 0;
 
     std::string toJSON() const;
 };

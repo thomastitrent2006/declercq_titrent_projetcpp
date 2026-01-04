@@ -102,13 +102,25 @@ void CCR::creerVol(const std::string& nomAvion, const std::string& depart,
 }
 
 void CCR::processLogic() {
+    // Affichage debug - Toutes les 5 secondes
+    static int compteur = 0;
+    if (compteur++ % 50 == 0) {  // 50 * 100ms = 5 secondes
+        std::cout << "[CCR] " << avionsSousControle.size() << " avions sous contrôle\n";
+        for (auto* avion : avionsSousControle) {
+            Position pos = avion->getPosition();
+            std::cout << "  - " << avion->getNom()
+                << " à (" << (int)(pos.x / 1000) << ", " << (int)(pos.y / 1000) << ") km"
+                << " | État: " << avion->getEtatString() << "\n";
+        }
+    }
+
     gererSeparation();
     gererFlux();
     transfererVersAPP();
 }
 
 void CCR::gererSeparation() {
-    std::lock_guard<std::mutex> lock(mtx);
+    
 
     const double SEPARATION_MINIMALE = 5000.0; // 5 km
     const double SEPARATION_VERTICALE = 300.0;  // 300 m
@@ -149,7 +161,6 @@ void CCR::gererSeparation() {
 }
 
 void CCR::gererFlux() {
-    std::lock_guard<std::mutex> lock(mtx);
 
     // Vérifier que les aéroports ne sont pas surchargés
     for (auto& pair : aeroports) {
@@ -165,7 +176,6 @@ void CCR::gererFlux() {
 }
 
 void CCR::transfererVersAPP() {
-    std::lock_guard<std::mutex> lock(mtx);
 
     std::vector<Avion*> avionsARetirer;
 

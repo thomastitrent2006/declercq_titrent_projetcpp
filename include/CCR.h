@@ -9,15 +9,15 @@
 struct Aeroport {
     std::string nom;
     Position position;
-    APP* controleurApproche;
-    int capaciteMax;          // Nombre max d'avions en approche
-    int avionsEnApproche;     // Nombre actuel d'avions
+    APP* controleurApproche = nullptr;  // ? Initialisé à nullptr
+    int capaciteMax = 0;                // ? Initialisé à 0
+    int avionsEnApproche = 0;           // ? Initialisé à 0
 };
 
 struct Route {
     std::string depart;
     std::string arrivee;
-    double distance;
+    double distance = 0.0;
     std::vector<Position> waypoints; // Points de passage
 };
 

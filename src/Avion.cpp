@@ -153,17 +153,24 @@ void Avion::updateMontee(double dt) {
 }
 
 void Avion::updateCroisiere(double dt) {
-    vitesse = vitesse_croisiere * 50.0;  // ← x50 plus rapide pour les tests !
+    vitesse = vitesse_croisiere * 50.0;
 
-    // Mettre à jour le cap vers la destination
     cap = calculerCap(destination);
 
     double distance_parcourue = vitesse * dt;
     position.x += distance_parcourue * cos(cap * M_PI / 180.0);
     position.y += distance_parcourue * sin(cap * M_PI / 180.0);
 
-    // Commence la descente à 30km
     double distance_restante = distanceVers(destination);
+
+    //  AJOUTE : Arrêter si très proche
+    if (distance_restante < 5000.0) {  // 5 km
+        vitesse = 0;
+        position = destination;  // Snap à la destination
+        etat = EtatAvion::PARKING;
+        return;
+    }
+
     if (distance_restante < 30000) {
         etat = EtatAvion::DESCENTE;
     }
@@ -274,5 +281,7 @@ std::string Avion::getEtatString() const {
 }
 
 bool Avion::volTermine() const {
-    return (etat == EtatAvion::ROULAGE_ARRIVEE && vitesse == 0);
+    // Arrêter si proche de la destination (< 5 km)
+    double distance = distanceVers(destination);
+    return distance < 5000.0;
 }

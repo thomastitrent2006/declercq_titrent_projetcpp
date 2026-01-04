@@ -137,24 +137,35 @@ void initializeSimulation() {
             });
     }
     
-    // ========== DÉMARRER LES CONTRÔLEURS (CCR, APP, TWR) ==========
+    std::cout << "\n=== DÉMARRAGE DE LA SIMULATION ===\n";
+
     for (auto* plane : planes) {
         if (plane != nullptr) {
             planeThreads.emplace_back([plane]() {
                 try {
-                    plane->demarrer();  // ← L'avion bouge !
+                    plane->demarrer();
                 }
                 catch (const std::exception& e) {
-                    std::cerr << "Erreur avion: " << e.what() << "\n";
+                    std::cerr << "Erreur avion " << plane->getNom() << ": " << e.what() << "\n";
                 }
                 });
+            std::cout << "✅ Avion " << plane->getNom() << " démarré\n";
         }
     }
 
-    // ========== NE PAS DÉMARRER LES CONTRÔLEURS ==========
-    // ❌ LAISSE CECI EN COMMENTAIRE pour l'instant
-    /*
-    ccr->demarrer();
+    // ========== ÉTAPE 1 : TESTER LE CCR UNIQUEMENT ==========
+    std::cout << "\n--- Test CCR ---\n";
+    try {
+        ccr->demarrer();
+        std::cout << "✅ CCR démarré avec succès\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));  // Laisser le temps de démarrer
+    }
+    catch (const std::exception& e) {
+        std::cerr << "❌ ERREUR CCR: " << e.what() << "\n";
+        std::cerr << "   → Arrêt de la simulation\n";
+        return;  // Arrêter si le CCR ne démarre pas
+    }
+   /*
     for (auto* airport : airports) {
         airport->demarrer();
     }

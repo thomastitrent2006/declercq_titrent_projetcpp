@@ -19,8 +19,18 @@ APP::APP(const std::string& nom, const Position& centre, float rayon,
 }
 
 void APP::processLogic() {
+    static int compteur = 0;
+    if (compteur++ % 50 == 0) {
+        if (!avionsSousControle.empty()) {
+            std::cout << "[APP " << nom << "] " << avionsSousControle.size() << " avions\n";
+            for (auto* avion : avionsSousControle) {
+                std::cout << "  - " << avion->getNom()
+                    << " | " << avion->getEtatString() << "\n";
+            }
+        }
+    }
+
     gererNouvellesArrivees();
-    /*gererUrgences();*/
     gererTrajectoires();
 }
 
@@ -36,7 +46,7 @@ bool APP::estDansZone(const Position& pos) const {
 void APP::ajouterAvionEnApproche(Avion* avion) {
     if (avion == nullptr) return;
 
-    std::lock_guard<std::mutex> lock(mtx);
+    
 
     // Vérifier si l'avion n'est pas déjà dans la liste
     for (auto* a : avionsEnApproche) {
@@ -54,7 +64,7 @@ void APP::ajouterAvionEnApproche(Avion* avion) {
 void APP::retirerAvionEnApproche(Avion* avion) {
     if (avion == nullptr) return;
 
-    std::lock_guard<std::mutex> lock(mtx);
+    
 
     for (size_t i = 0; i < avionsEnApproche.size(); i++) {
         if (avionsEnApproche[i]->getNom() == avion->getNom()) {
@@ -67,7 +77,7 @@ void APP::retirerAvionEnApproche(Avion* avion) {
 }
 
 void APP::gererNouvellesArrivees() {
-    std::lock_guard<std::mutex> lock(mtx);
+    
 
     for (auto* avion : avionsSousControle) {
         // Les états possibles avant l'approche sont CROISIERE ou DESCENTE
@@ -131,7 +141,7 @@ void APP::gererNouvellesArrivees() {
 }
 */
 void APP::gererTrajectoires() {
-    std::lock_guard<std::mutex> lock(mtx);
+    
 
     if (!fileAttenteAtterrissage.empty() && towerReference != nullptr) {
         std::string avionId = fileAttenteAtterrissage.front();

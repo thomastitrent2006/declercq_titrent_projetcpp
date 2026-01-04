@@ -1,7 +1,7 @@
 // Avion.h
 #ifndef AVION_H
 #define AVION_H
-
+#include "Position.h"
 #include <string>
 #include <cmath>
 #include <iostream>
@@ -20,19 +20,8 @@ enum class EtatAvion {
 };
 
 // Structure Position
-struct Position {
-    double x;           // Coordonnée X (en mètres ou km)
-    double y;           // Coordonnée Y (en mètres ou km)
-    double altitude;    // Altitude (en mètres)
 
-    Position(double x = 0, double y = 0, double altitude = 0)
-        : x(x), y(y), altitude(altitude) {
-    }
-
-    void afficher() const {
-        std::cout << "Position: x=" << x << "m, y=" << y << "m, altitude=" << altitude << "m" << std::endl;
-    }
-};
+   
 
 class Avion {
 private:
@@ -67,6 +56,9 @@ public:
     double getVitesse() const { return vitesse; }
     double getAltitude() const { return position.altitude; }
     EtatAvion getEtat() const { return etat; }
+
+    // Setters
+    void setEtat(EtatAvion nouvelEtat) { etat = nouvelEtat; }
 
     // Méthode principale de mise à jour
     void update(double dt);  // dt = delta temps en secondes

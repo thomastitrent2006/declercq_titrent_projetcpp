@@ -1,34 +1,64 @@
-#ifndef APP_H
-#define APP_H
-
+#pragma once
 #include "ControleurBase.h"
+#include "../include/Position.h"
+#include "Avion.h"
+#include <vector>
 #include <queue>
+#include <string>
+#include <mutex>
 
-class TWR; // Forward declaration
+// Déclaration forward pour éviter les dépendances circulaires
+class TWR;
+class CCR;
 
 class APP : public ControleurBase {
 private:
     Position centreAeroport;
-    double rayonControle;
-    std::queue<std::string> fileAttenteAtterrissage;
-    TWR* towerReference;
+    float rayonControle;
 
-    void processLogic() override;
-    void gererNouvelArrivant(Avion* avion);
-    void gererTrajectoires();
-    void gererUrgences();
-    bool demanderAutorisationAtterrissage(const std::string& avionId);
+    std::vector<Avion*> avionsEnApproche;
+    std::queue<std::string> fileAttenteAtterrissage;
+
+    TWR* towerReference;
+    CCR* ccrReference;
 
 public:
-    APP(const std::string& nom, const Position& centre, double rayon);
+    // Constructeur
+    APP(const std::string& nom, const Position& centre, float rayon,
+        TWR* twr = nullptr, CCR* ccr = nullptr);
 
-    void setTowerReference(TWR* twr) { towerReference = twr; }
+    // Méthode principale héritée de ControleurBase
+    void processLogic() override;
 
-    // Affichage console circulaire
+    // Getters
+    float getRayon() const { return rayonControle; }
+    Position getPosition() const { return centreAeroport; }
+    TWR* getTWR() const { return towerReference; }
+    CCR* getCCR() const { return ccrReference; }
+    std::vector<Avion*>& getAvionsEnApproche() { return avionsEnApproche; }
+
+    // Setters
+    void setTWR(TWR* twr) { towerReference = twr; }
+    void setCCR(CCR* ccr) { ccrReference = ccr; }
+
+    // Vérification de présence dans la zone
+    bool estDansZone(const Avion& avion) const;
+    bool estDansZone(const Position& pos) const;
+
+    // Gestion des avions
+    void ajouterAvionEnApproche(Avion* avion);
+    void retirerAvionEnApproche(Avion* avion);
+
+    // Logique de contrôle
+    void gererNouvellesArrivees();
+   /* void gererUrgences();*/
+    void gererTrajectoires();
+    void assignerTrajectoireCirculaire(Avion* avion, int niveau);
+    bool demanderAutorisationAtterrissage(const std::string& avionId);
+
+    // Affichage
     void afficherConsole() const;
 
-    // Assigne une trajectoire circulaire autour de l'aéroport
-    void assignerTrajectoireCirculaire(Avion* avion, int niveau);
+    // Demander un nouveau contrôleur APP si saturé
+    APP* demanderNouvelAPP();
 };
-
-#endif // APP_H

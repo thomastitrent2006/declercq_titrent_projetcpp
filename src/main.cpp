@@ -1,9 +1,10 @@
 ﻿#include "../include/Avion.h"
+#include "../include/CCR.h"
+#include "../include/APP.h"
+#include "../include/TWR.h"
 #include <iostream>
-#include <ctime>
 #include <vector>
 #include <SFML/Graphics.hpp>
-#include <cmath>
 
 using namespace sf;
 
@@ -16,7 +17,20 @@ const int WINDOW_SIZE_Y = 1104;
 #define _PATHIMG "./img/"
 #endif
 
-// Fonction pour convertir les coordonnées monde en coordonnées écran
+// Fonction pour convertir les coordonnées écran en coordonnées monde
+Position screenToWorld(const sf::Vector2f& screenPos, int windowWidth, int windowHeight) {
+    const double CARTE_LARGEUR_KM = 1000.0;
+    const double CARTE_HAUTEUR_KM = 950.0;
+
+    double normX = screenPos.x / static_cast<double>(windowWidth);
+    double normY = screenPos.y / static_cast<double>(windowHeight);
+
+    double worldX = (normX - 0.5) * CARTE_LARGEUR_KM * 1000.0;
+    double worldY = (normY - 0.5) * CARTE_HAUTEUR_KM * 1000.0;
+
+    return Position(worldX, worldY, 0.0);
+}
+
 Vector2f worldToScreen(const Position& posAvion, const Position& depart, const Position& arrivee,
     const Vector2f& screenStart, const Vector2f& screenEnd) {
     double total_dx = arrivee.x - depart.x;
@@ -41,6 +55,49 @@ void initializeSimulation() {
     RenderWindow window(VideoMode({ WINDOW_SIZE_X, WINDOW_SIZE_Y }), "Air Traffic Control");
     window.setFramerateLimit(60);
 
+    // Créer le CCR
+    CCR* ccr = new CCR("CCR_France", 10000.0);
+
+    // Créer les contrôleurs d'approche et tours pour chaque aéroport
+    Position posCDG = screenToWorld(Vector2f(600.0f, 80.0f), WINDOW_SIZE_X, WINDOW_SIZE_Y);
+    TWR* twrCDG = new TWR("TWR_CDG");
+    APP* appCDG = new APP("APP_CDG", posCDG, 50000.0f, twrCDG, ccr);
+    ccr->ajouterAeroport("CDG", posCDG, appCDG, 15);
+
+    Position posORY = screenToWorld(Vector2f(560.0f, 280.0f), WINDOW_SIZE_X, WINDOW_SIZE_Y);
+    TWR* twrORY = new TWR("TWR_ORY");
+    APP* appORY = new APP("APP_ORY", posORY, 45000.0f, twrORY, ccr);
+    ccr->ajouterAeroport("ORY", posORY, appORY, 12);
+
+    Position posMRS = screenToWorld(Vector2f(470.0f, 780.0f), WINDOW_SIZE_X, WINDOW_SIZE_Y);
+    TWR* twrMRS = new TWR("TWR_MRS");
+    APP* appMRS = new APP("APP_MRS", posMRS, 40000.0f, twrMRS, ccr);
+    ccr->ajouterAeroport("MRS", posMRS, appMRS, 10);
+
+    Position posNTE = screenToWorld(Vector2f(280.0f, 450.0f), WINDOW_SIZE_X, WINDOW_SIZE_Y);
+    TWR* twrNTE = new TWR("TWR_NTE");
+    APP* appNTE = new APP("APP_NTE", posNTE, 35000.0f, twrNTE, ccr);
+    ccr->ajouterAeroport("NTE", posNTE, appNTE, 8);
+
+    Position posLYS = screenToWorld(Vector2f(750.0f, 620.0f), WINDOW_SIZE_X, WINDOW_SIZE_Y);
+    TWR* twrLYS = new TWR("TWR_LYS");
+    APP* appLYS = new APP("APP_LYS", posLYS, 40000.0f, twrLYS, ccr);
+    ccr->ajouterAeroport("LYS", posLYS, appLYS, 10);
+
+    Position posNCE = screenToWorld(Vector2f(800.0f, 850.0f), WINDOW_SIZE_X, WINDOW_SIZE_Y);
+    TWR* twrNCE = new TWR("TWR_NCE");
+    APP* appNCE = new APP("APP_NCE", posNCE, 38000.0f, twrNCE, ccr);
+    ccr->ajouterAeroport("NCE", posNCE, appNCE, 9);
+
+    // Créer quelques routes
+    ccr->ajouterRoute("CDG", "MRS");
+    ccr->ajouterRoute("CDG", "NCE");
+    ccr->ajouterRoute("ORY", "LYS");
+    ccr->ajouterRoute("NTE", "MRS");
+
+    // Créer un vol de test
+    ccr->creerVol("AF123", "CDG", "MRS");
+
     // Charger la carte
     Texture backgroundImage;
     if (!backgroundImage.loadFromFile(std::string(_PATHIMG) + "france.png")) {
@@ -49,14 +106,15 @@ void initializeSimulation() {
     }
     Sprite backgroundSprite(backgroundImage);
 
-    std::vector<Sprite> airportSprites;
-
-    // Charger l'aéroport
+    // Charger les sprites d'aéroports
     Texture aeroportImage;
     if (!aeroportImage.loadFromFile(std::string(_PATHIMG) + "airport.png")) {
         std::cerr << "Erreur chargement airport" << std::endl;
         return;
     }
+
+    std::vector<Sprite> airportSprites;
+
     Sprite airport1(aeroportImage);
     airport1.scale({ 0.3f, 0.3f });
     airport1.setPosition({ 600, 80 });
@@ -96,22 +154,10 @@ void initializeSimulation() {
     Sprite Spriteairplane(airplane);
     Spriteairplane.scale({ 0.15f, 0.15f });
 
-    // Positions
-    Vector2f positionDepartEcran(WINDOW_SIZE_X / 2.0f, WINDOW_SIZE_Y / 2.0f);
-    Vector2f positionArriveeEcran(600, 80);
-
-    Position depart(0, 0, 0);
-    Position arrivee(100000, 50000, 0);
-    Avion avion("AF123", depart, arrivee);
-
-    Spriteairplane.setPosition(positionDepartEcran);
-
     Clock clock;
 
-    Position posActuelle;
-
     // Boucle principale
-    while (window.isOpen() && !avion.volTermine()) {
+    while (window.isOpen()) {
         while (const std::optional<Event> event = window.pollEvent()) {
             if ((event->is<sf::Event::KeyPressed>() &&
                 event->getIf<sf::Event::KeyPressed>()->code == sf::Keyboard::Key::Escape) ||
@@ -122,26 +168,45 @@ void initializeSimulation() {
 
         float deltaTime = clock.restart().asSeconds();
 
-        // Mise à jour de l'avion avec simulation accélérée
-        avion.update(deltaTime * 50);
+        // Mettre à jour la logique du CCR
+       /* ccr->processLogic();*/
 
-        // Mise à jour de la position du sprite
-        Position posActuelle = avion.getPosition();
-        Vector2f screenPos = worldToScreen(posActuelle, depart, arrivee,
-            positionDepartEcran, positionArriveeEcran);
-        Spriteairplane.setPosition(screenPos);
+        // Mettre à jour tous les APP
+        appCDG->processLogic();
+        appORY->processLogic();
+        appMRS->processLogic();
+        appNTE->processLogic();
+        appLYS->processLogic();
+        appNCE->processLogic();
+
+        // Mettre à jour toutes les tours
+       /* twrCDG->processLogic();
+        twrORY->processLogic();
+        twrMRS->processLogic();
+        twrNTE->processLogic();
+        twrLYS->processLogic();
+        twrNCE->processLogic();*/
 
         // Rendu
         window.clear();
         window.draw(backgroundSprite);
-        // Dessiner tous les aéroports
+
         for (const auto& airport : airportSprites) {
             window.draw(airport);
         }
-        
+
         window.draw(Spriteairplane);
         window.display();
     }
+
+    // Nettoyage
+    delete ccr;
+    delete appCDG; delete twrCDG;
+    delete appORY; delete twrORY;
+    delete appMRS; delete twrMRS;
+    delete appNTE; delete twrNTE;
+    delete appLYS; delete twrLYS;
+    delete appNCE; delete twrNCE;
 }
 
 int main() {

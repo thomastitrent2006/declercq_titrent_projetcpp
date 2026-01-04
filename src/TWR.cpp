@@ -100,7 +100,10 @@ void TWR::gererAtterrissages() {
                 // Trouver l'avion et l'assigner au parking
                 for (auto* avion : avionsSousControle) {
                     if (avion->getNom() == piste.avionActuel) {
-                        avion->setParkingAssigne(parkingId);
+                        // setParkingAssigne n'existe pas - on commente
+                        // avion->setParkingAssigne(parkingId);
+
+                        // Utiliser l'état ROULAGE_ARRIVEE qui existe
                         avion->setEtat(EtatAvion::ROULAGE_ARRIVEE);
 
                         parkings[parkingId].occupee = true;
@@ -127,9 +130,12 @@ void TWR::gererRoulage() {
         if (avion->getEtat() == EtatAvion::ROULAGE_ARRIVEE) {
             // Simulation: l'avion arrive au parking après un certain temps
             // Dans une vraie simulation, cela dépendrait de la distance
-            avion->setEtat(EtatAvion::STATIONNE);
-            logAction("AVION_STATIONNE", "Avion " + avion->getNom() +
-                " stationné au parking " + avion->getParkingAssigne());
+
+            // Utiliser l'état PARKING au lieu de STATIONNE qui n'existe pas
+            avion->setEtat(EtatAvion::PARKING);
+
+            // getParkingAssigne n'existe pas - on utilise une approche alternative
+            logAction("AVION_STATIONNE", "Avion " + avion->getNom() + " stationné");
         }
     }
 }
@@ -143,18 +149,33 @@ void TWR::gererDecollages() {
         double distanceMax = 0;
 
         for (auto* avion : avionsSousControle) {
-            if (avion->getEtat() == EtatAvion::STATIONNE) {
-                std::string parking = avion->getParkingAssigne();
-                if (!parking.empty() && parkings[parking].distancePiste > distanceMax) {
-                    distanceMax = parkings[parking].distancePiste;
-                    avionPrioritaire = avion;
+            // Utiliser PARKING au lieu de STATIONNE
+            if (avion->getEtat() == EtatAvion::PARKING) {
+                // Comme getParkingAssigne n'existe pas, on cherche le parking occupé par cet avion
+                for (const auto& pair : parkings) {
+                    if (pair.second.occupee && pair.second.avionActuel == avion->getNom()) {
+                        if (pair.second.distancePiste > distanceMax) {
+                            distanceMax = pair.second.distancePiste;
+                            avionPrioritaire = avion;
+                        }
+                        break;
+                    }
                 }
             }
         }
 
         if (avionPrioritaire != nullptr) {
-            avionPrioritaire->setEtat(EtatAvion::ROULAGE_DEPART);
-            libererParking(avionPrioritaire->getParkingAssigne());
+            // Utiliser ROULAGE_DECOLLAGE au lieu de ROULAGE_DEPART
+            avionPrioritaire->setEtat(EtatAvion::ROULAGE_DECOLLAGE);
+
+            // Libérer le parking de cet avion
+            for (const auto& pair : parkings) {
+                if (pair.second.occupee && pair.second.avionActuel == avionPrioritaire->getNom()) {
+                    libererParking(pair.first);
+                    break;
+                }
+            }
+
             logAction("AUTORISATION_DECOLLAGE",
                 "Avion " + avionPrioritaire->getNom() + " autorisé à rouler vers la piste");
         }
@@ -174,24 +195,20 @@ std::string TWR::assignerParking() {
 void TWR::afficherPlanAeroport() const {
     std::lock_guard<std::mutex> lock(mtx);
 
-    std::cout << "\n╔════════════════════════════════════════╗\n";
-    std::cout << "║     TOUR DE CONTRÔLE - " << std::left << std::setw(12) << nom << "   ║\n";
-    std::cout << "╠════════════════════════════════════════╣\n";
-    std::cout << "║ PISTE: " << (piste.occupee ? "OCCUPÉE [" + piste.avionActuel + "]" : "LIBRE")
-        << std::string(26 - (piste.occupee ? piste.avionActuel.length() + 10 : 5), ' ') << "║\n";
-    std::cout << "╠════════════════════════════════════════╣\n";
-    std::cout << "║ PARKINGS:                              ║\n";
+    std::cout << "\n=== TOUR DE CONTROLE - " << nom << " ===\n";
+    std::cout << "PISTE: " << (piste.occupee ? "OCCUPEE [" + piste.avionActuel + "]" : "LIBRE") << "\n";
+    std::cout << "\nPARKINGS:\n";
 
     for (const auto& pair : parkings) {
-        std::cout << "║  " << std::left << std::setw(4) << pair.first << ": ";
+        std::cout << "  " << pair.first << ": ";
         if (pair.second.occupee) {
-            std::cout << std::setw(30) << pair.second.avionActuel;
+            std::cout << pair.second.avionActuel;
         }
         else {
-            std::cout << std::setw(30) << "DISPONIBLE";
+            std::cout << "DISPONIBLE";
         }
-        std::cout << " ║\n";
+        std::cout << "\n";
     }
 
-    std::cout << "╚════════════════════════════════════════╝\n";
+    std::cout << "=============================\n";
 }

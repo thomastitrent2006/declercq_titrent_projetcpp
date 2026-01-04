@@ -4,12 +4,14 @@
 #include <cmath>
 
 struct Position {
-    double x;      // Position en mètres
-    double y;      // Position en mètres
-    double altitude; // Altitude en mètres
+    double x;           // Coordonnée X (en mètres ou km)
+    double y;           // Coordonnée Y (en mètres ou km)
+    double altitude;    // Altitude (en mètres)
 
-    Position() : x(0), y(0), altitude(0) {}
-    Position(double _x, double _y, double _alt) : x(_x), y(_y), altitude(_alt) {}
+    Position(double x = 0, double y = 0, double altitude = 0)
+        : x(x), y(y), altitude(altitude) {
+    }
+
 
     // Calcule la distance 2D entre deux positions
     double distanceTo(const Position& other) const {

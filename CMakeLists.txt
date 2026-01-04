@@ -18,10 +18,14 @@ find_package(SFML 3 COMPONENTS Window Graphics System REQUIRED)
 link_libraries(SFML::Graphics SFML::Window SFML::System)
 
 
-add_executable(ProjetCPP 
+add_executable(ProjetCPP
+    
     src/Avion.cpp
     src/main.cpp
+    src/APP.cpp
+    src/CCR.cpp
+    src/TWR.cpp
+    src/ControleurBase.cpp
     
-   
 )
 

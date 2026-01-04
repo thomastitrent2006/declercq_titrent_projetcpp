@@ -1,6 +1,6 @@
 #ifndef CCR_H
 #define CCR_H
-
+#include "Position.h"
 #include "ControleurBase.h"
 #include "APP.h"
 #include <map>
@@ -56,7 +56,7 @@ public:
 };
 
 #endif // CCR_H
-````````
+
 
 double CCR::calculerSeparationMinimale(Avion* a1, Avion* a2) const {
     Position pos1 = a1->getPosition();

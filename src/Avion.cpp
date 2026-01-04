@@ -199,10 +199,7 @@ double Avion::calculerCap(const Position& cible) const {
 }
 
 void Avion::afficherEtat() const {
-    std::cout << "[" << nom << "] " << getEtatString()
-        << " | Vitesse: " << vitesse << " m/s"
-        << " | ";
-    position.afficher();
+    std::cout << "[" << nom << "] " << getEtatString() << std::endl;
 }
 
 std::string Avion::getEtatString() const {

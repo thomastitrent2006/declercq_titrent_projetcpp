@@ -19,6 +19,8 @@ APP::APP(const std::string& nom, const Position& centre, float rayon,
 }
 
 void APP::processLogic() {
+    std::lock_guard<std::mutex> lock(mtx);
+
     static int compteur = 0;
     if (compteur++ % 50 == 0) {
         if (!avionsSousControle.empty()) {
@@ -46,8 +48,6 @@ bool APP::estDansZone(const Position& pos) const {
 void APP::ajouterAvionEnApproche(Avion* avion) {
     if (avion == nullptr) return;
 
-    
-
     // Vérifier si l'avion n'est pas déjà dans la liste
     for (auto* a : avionsEnApproche) {
         if (a->getNom() == avion->getNom()) {
@@ -56,7 +56,7 @@ void APP::ajouterAvionEnApproche(Avion* avion) {
     }
 
     avionsEnApproche.push_back(avion);
-    ajouterAvion(avion); // Appel à la méthode de ControleurBase
+    ajouterAvion(avion);
 
     logAction("AVION_AJOUTE", "Avion " + avion->getNom() + " ajouté en approche");
 }
@@ -64,12 +64,10 @@ void APP::ajouterAvionEnApproche(Avion* avion) {
 void APP::retirerAvionEnApproche(Avion* avion) {
     if (avion == nullptr) return;
 
-    
-
     for (size_t i = 0; i < avionsEnApproche.size(); i++) {
         if (avionsEnApproche[i]->getNom() == avion->getNom()) {
             avionsEnApproche.erase(avionsEnApproche.begin() + i);
-            retirerAvion(avion->getNom()); // Appel à la méthode de ControleurBase
+            retirerAvion(avion->getNom());
             logAction("AVION_RETIRE", "Avion " + avion->getNom() + " retiré de l'approche");
             return;
         }
@@ -77,10 +75,7 @@ void APP::retirerAvionEnApproche(Avion* avion) {
 }
 
 void APP::gererNouvellesArrivees() {
-    
-
     for (auto* avion : avionsSousControle) {
-        // Les états possibles avant l'approche sont CROISIERE ou DESCENTE
         if (avion->getEtat() == EtatAvion::CROISIERE ||
             avion->getEtat() == EtatAvion::DESCENTE) {
             Position pos = avion->getPosition();
@@ -114,35 +109,7 @@ void APP::gererNouvellesArrivees() {
     }
 }
 
-/* void APP::gererUrgences() {
-    std::lock_guard<std::mutex> lock(mtx);
-
-    for (auto* avion : avionsSousControle) {
-        if (avion->estEnUrgence() && avion->getEtat() == EtatAvion::APPROCHE) {
-            logAction("URGENCE_DETECTEE",
-                "Avion " + avion->getNom() + " signale une urgence - carburant faible");
-
-            // Placer en tête de file
-            std::queue<std::string> nouvelleFile;
-            nouvelleFile.push(avion->getNom());
-
-            while (!fileAttenteAtterrissage.empty()) {
-                std::string id = fileAttenteAtterrissage.front();
-                fileAttenteAtterrissage.pop();
-                if (id != avion->getNom()) {
-                    nouvelleFile.push(id);
-                }
-            }
-
-            fileAttenteAtterrissage = nouvelleFile;
-            avion->setEtat(EtatAvion::URGENCE);
-        }
-    }
-}
-*/
 void APP::gererTrajectoires() {
-    
-
     if (!fileAttenteAtterrissage.empty() && towerReference != nullptr) {
         std::string avionId = fileAttenteAtterrissage.front();
 
@@ -151,7 +118,6 @@ void APP::gererTrajectoires() {
 
             for (auto* avion : avionsSousControle) {
                 if (avion->getNom() == avionId) {
-                    // Changer l'état vers ATTERRISSAGE plutôt que ATTENTE_ATTERRISSAGE
                     avion->setEtat(EtatAvion::ATTERRISSAGE);
 
                     Message msg;
@@ -162,9 +128,9 @@ void APP::gererTrajectoires() {
                     msg.contenu = "Avion transféré pour atterrissage";
                     msg.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
                         std::chrono::system_clock::now().time_since_epoch()).count();
-
+/*
                     envoyerMessage(msg);
-
+                    */
                     logAction("TRANSFERT_TWR", "Avion " + avionId + " transféré à la tour");
                     break;
                 }
@@ -196,12 +162,10 @@ void APP::assignerTrajectoireCirculaire(Avion* avion, int niveau) {
 }
 
 APP* APP::demanderNouvelAPP() {
-    // Si le CCR est disponible, lui demander un nouvel APP
     if (ccrReference != nullptr) {
         logAction("DEMANDE_NOUVEL_APP",
             "Zone saturée, demande d'un nouveau contrôleur d'approche");
-        // Le CCR devrait créer un nouvel APP
-        return nullptr; // À implémenter dans CCR
+        return nullptr;
     }
     return nullptr;
 }

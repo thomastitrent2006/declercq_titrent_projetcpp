@@ -165,14 +165,19 @@ void initializeSimulation() {
         std::cerr << "   → Arrêt de la simulation\n";
         return;  // Arrêter si le CCR ne démarre pas
     }
-   /*
-    for (auto* airport : airports) {
-        airport->demarrer();
+   
+    std::cout << "\n--- Test APP ---\n";
+    for (size_t i = 0; i < airports.size(); i++) {
+        try {
+            airports[i]->demarrer();
+            std::cout << "✅ APP " << (i + 1) << " démarré\n";
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+        catch (const std::exception& e) {
+            std::cerr << "❌ ERREUR APP " << (i + 1) << ": " << e.what() << "\n";
+        }
     }
-    for (auto* tower : towers) {
-        tower->demarrer();
-    }
-    */
+    
     
     std::cout << "=== SIMULATION DÉMARRÉE ===\n";
     std::cout << "Avions créés: " << planes.size() << "\n";

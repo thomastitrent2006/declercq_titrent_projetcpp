@@ -76,6 +76,7 @@ public:
     // Vérification fin de vol
     bool volTermine() const;
 
+    Position getDestination() const { return destination; }
 private:
     // Méthodes internes de gestion du vol
     void updateRoulageDecollage(double dt);

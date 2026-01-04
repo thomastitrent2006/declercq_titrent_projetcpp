@@ -5,7 +5,7 @@
 TWR::TWR(const std::string& nom) : ControleurBase(nom) {
     piste.occupee = false;
     piste.avionActuel = "";
-    initialiserParkings(10); // 10 parkings par défaut
+    initialiserParkings(10);
 }
 
 void TWR::initialiserParkings(int nombre) {
@@ -16,7 +16,7 @@ void TWR::initialiserParkings(int nombre) {
         p.id = "P" + std::to_string(i);
         p.occupee = false;
         p.avionActuel = "";
-        p.distancePiste = 100.0 * i; // Plus le numéro est élevé, plus c'est loin
+        p.distancePiste = 100.0 * i;
         p.position = Position(50.0 * i, 100.0, 0);
 
         parkings[p.id] = p;
@@ -27,27 +27,26 @@ void TWR::initialiserParkings(int nombre) {
 
 bool TWR::pisteLibre() const {
     std::lock_guard<std::mutex> lock(mtx);
+    return pisteLibreInternal();
+}
 
+bool TWR::pisteLibreInternal() const {
     if (piste.occupee) {
         auto now = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
             now - piste.heureLiberation).count();
-
-        // La piste sera bientôt libre
         return elapsed >= 0;
     }
-
     return true;
 }
 
 bool TWR::autoriserAtterrissage(const std::string& avionId) {
     std::lock_guard<std::mutex> lock(mtx);
 
-    if (!pisteLibre()) {
+    if (!pisteLibreInternal()) {
         return false;
     }
 
-    // Occuper la piste
     piste.occupee = true;
     piste.avionActuel = avionId;
     piste.heureLiberation = std::chrono::steady_clock::now() +
@@ -66,7 +65,7 @@ std::string TWR::getParkingDisponible() const {
         }
     }
 
-    return ""; // Aucun parking disponible
+    return "";
 }
 
 void TWR::libererParking(const std::string& parkingId) {
@@ -89,21 +88,14 @@ void TWR::processLogic() {
 void TWR::gererAtterrissages() {
     std::lock_guard<std::mutex> lock(mtx);
 
-    // Vérifier si la piste doit être libérée
     if (piste.occupee) {
         auto now = std::chrono::steady_clock::now();
         if (now >= piste.heureLiberation) {
-            // Avion a atterri, assigner un parking
             std::string parkingId = assignerParking();
 
             if (!parkingId.empty()) {
-                // Trouver l'avion et l'assigner au parking
                 for (auto* avion : avionsSousControle) {
                     if (avion->getNom() == piste.avionActuel) {
-                        // setParkingAssigne n'existe pas - on commente
-                        // avion->setParkingAssigne(parkingId);
-
-                        // Utiliser l'état ROULAGE_ARRIVEE qui existe
                         avion->setEtat(EtatAvion::ROULAGE_ARRIVEE);
 
                         parkings[parkingId].occupee = true;
@@ -123,18 +115,11 @@ void TWR::gererAtterrissages() {
 }
 
 void TWR::gererRoulage() {
-    // Simuler le roulage des avions
     std::lock_guard<std::mutex> lock(mtx);
 
     for (auto* avion : avionsSousControle) {
         if (avion->getEtat() == EtatAvion::ROULAGE_ARRIVEE) {
-            // Simulation: l'avion arrive au parking après un certain temps
-            // Dans une vraie simulation, cela dépendrait de la distance
-
-            // Utiliser l'état PARKING au lieu de STATIONNE qui n'existe pas
             avion->setEtat(EtatAvion::PARKING);
-
-            // getParkingAssigne n'existe pas - on utilise une approche alternative
             logAction("AVION_STATIONNE", "Avion " + avion->getNom() + " stationné");
         }
     }
@@ -143,15 +128,12 @@ void TWR::gererRoulage() {
 void TWR::gererDecollages() {
     std::lock_guard<std::mutex> lock(mtx);
 
-    // Logique de priorité: l'avion le plus éloigné de la piste part en premier
     if (!piste.occupee && !avionsSousControle.empty()) {
         Avion* avionPrioritaire = nullptr;
         double distanceMax = 0;
 
         for (auto* avion : avionsSousControle) {
-            // Utiliser PARKING au lieu de STATIONNE
             if (avion->getEtat() == EtatAvion::PARKING) {
-                // Comme getParkingAssigne n'existe pas, on cherche le parking occupé par cet avion
                 for (const auto& pair : parkings) {
                     if (pair.second.occupee && pair.second.avionActuel == avion->getNom()) {
                         if (pair.second.distancePiste > distanceMax) {
@@ -165,13 +147,14 @@ void TWR::gererDecollages() {
         }
 
         if (avionPrioritaire != nullptr) {
-            // Utiliser ROULAGE_DECOLLAGE au lieu de ROULAGE_DEPART
             avionPrioritaire->setEtat(EtatAvion::ROULAGE_DECOLLAGE);
 
-            // Libérer le parking de cet avion
-            for (const auto& pair : parkings) {
+            // Libérer le parking directement (on a déjà le lock)
+            for (auto& pair : parkings) {
                 if (pair.second.occupee && pair.second.avionActuel == avionPrioritaire->getNom()) {
-                    libererParking(pair.first);
+                    pair.second.occupee = false;
+                    pair.second.avionActuel = "";
+                    logAction("LIBERATION_PARKING", "Parking " + pair.first + " libéré");
                     break;
                 }
             }
@@ -183,7 +166,6 @@ void TWR::gererDecollages() {
 }
 
 std::string TWR::assignerParking() {
-    // Assigner le premier parking disponible
     for (auto& pair : parkings) {
         if (!pair.second.occupee) {
             return pair.first;

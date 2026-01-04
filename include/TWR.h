@@ -7,18 +7,17 @@
 #include <queue>
 
 struct Piste {
-    bool occupee;
+    bool occupee = false;              // ? Initialisé à false
     std::string avionActuel;
     std::chrono::steady_clock::time_point heureLiberation;
-    const int DUREE_ATTERRISSAGE = 30; // secondes
-    const int DUREE_DECOLLAGE = 20;    // secondes
+    static constexpr int DUREE_ATTERRISSAGE = 30;  // 30 secondes
 };
 
 struct Parking {
     std::string id;
-    bool occupee;
+    bool occupee = false;              // ? Initialisé à false
     std::string avionActuel;
-    double distancePiste; // en mètres
+    double distancePiste = 0.0;        // ? Initialisé à 0.0
     Position position;
 };
 
@@ -32,6 +31,7 @@ private:
     void gererAtterrissages();
     void gererDecollages();
     void gererRoulage();
+    bool pisteLibreInternal() const;
     std::string assignerParking();
 
 public:

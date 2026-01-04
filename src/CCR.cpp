@@ -176,61 +176,39 @@ void CCR::gererFlux() {
 }
 
 void CCR::transfererVersAPP() {
-
     std::vector<Avion*> avionsARetirer;
 
     for (auto* avion : avionsSousControle) {
         Position pos = avion->getPosition();
-
-        // ERREUR: getDestination n'existe pas dans Avion
-        // Il faudrait ajouter cette méthode à la classe Avion pour que cette logique fonctionne
-        // Position dest = avion->getDestination();
+        Position dest = avion->getDestination();  // ← Récupérer la destination
 
         // Chercher l'aéroport de destination
         for (auto& pair : aeroports) {
             Aeroport& aeroport = pair.second;
 
-            // ERREUR: on ne peut pas calculer distanceDestination sans getDestination
-            // Pour l'instant, on vérifie juste si l'avion est proche d'un aéroport
-            // double distanceDestination = dest.distanceTo(aeroport.position);
+            // Vérifier si c'est bien la destination
+            double distanceDestVersAeroport = dest.distanceTo(aeroport.position);
 
-            // L'avion est proche de l'aéroport
-            // if (distanceDestination < 1000.0) {
-            double distanceActuelle = pos.distanceTo(aeroport.position);
+            // L'avion est proche de SON aéroport de destination
+            if (distanceDestVersAeroport < 10000.0) {  // Destination à moins de 10km de l'aéroport
+                double distanceActuelle = pos.distanceTo(aeroport.position);
 
-            // L'avion entre dans la zone d'approche (50 km)
-            if (distanceActuelle < 50000.0 && aeroport.controleurApproche != nullptr) {
+                // L'avion entre dans la zone d'approche (50 km)
+                if (distanceActuelle < 50000.0 && aeroport.controleurApproche != nullptr) {
 
-                logAction("TRANSFERT_APP",
-                    "Avion " + avion->getNom() + " transféré à l'APP " +
-                    aeroport.nom);
+                    logAction("TRANSFERT_APP",
+                        "Avion " + avion->getNom() + " transféré à l'APP " + aeroport.nom);
 
-                // Transférer l'avion à l'APP
-                aeroport.controleurApproche->ajouterAvion(avion);
+                    aeroport.controleurApproche->ajouterAvion(avion);
+                    avionsARetirer.push_back(avion);
 
-                // Message de transfert
-                Message msg;
-                msg.expediteur = nom;
-                msg.destinataire = aeroport.controleurApproche->getNom();
-                msg.type = "TRANSFERT_AVION";
-                msg.avionId = avion->getNom();
-                msg.contenu = "Avion transféré pour approche";
-                msg.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::steady_clock::now().time_since_epoch()
-                ).count();
+                    if (aeroport.avionsEnApproche > 0) {
+                        aeroport.avionsEnApproche--;
+                    }
 
-                envoyerMessage(msg);
-
-                avionsARetirer.push_back(avion);
-
-                // Décrémenter le compteur
-                if (aeroport.avionsEnApproche > 0) {
-                    aeroport.avionsEnApproche--;
+                    break;
                 }
-
-                break;
             }
-            // }
         }
     }
 

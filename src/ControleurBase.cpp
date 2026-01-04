@@ -4,7 +4,6 @@
 
 ControleurBase::ControleurBase(const std::string& _nom)
     : nom(_nom), running(false) {
-    // Ouvrir le fichier de log
     std::string logFileName = "log_" + nom + ".json";
     logFile.open(logFileName, std::ios::app);
     if (logFile.is_open()) {
@@ -14,7 +13,6 @@ ControleurBase::ControleurBase(const std::string& _nom)
 }
 
 ControleurBase::~ControleurBase() {
-    // S'assurer que le thread est arrêté
     if (running.load()) {
         arreter();
     }
@@ -58,7 +56,9 @@ std::vector<Message> ControleurBase::getMessagesRecus() const {
     return historiqueMessages;
 }
 
+// ? SUPPRIME LE LOCK ICI - C'est la cause du deadlock !
 void ControleurBase::logMessage(const Message& msg) {
+    // PAS DE LOCK - appelé depuis des fonctions qui ont déjà le lock
     if (logFile.is_open()) {
         logFile << msg.toJSON() << ",\n";
         logFile.flush();
@@ -66,6 +66,7 @@ void ControleurBase::logMessage(const Message& msg) {
 }
 
 void ControleurBase::logAction(const std::string& action, const std::string& details) {
+    // PAS DE LOCK ICI NON PLUS
     Message msg;
     msg.expediteur = nom;
     msg.destinataire = "LOG";
@@ -79,10 +80,7 @@ void ControleurBase::logAction(const std::string& action, const std::string& det
     logMessage(msg);
 }
 
-// ========== IMPLÉMENTATION SÉCURISÉE DE demarrer() et arreter() ==========
-
 void ControleurBase::demarrer() {
-    // Vérifier si déjà démarré
     bool expected = false;
     if (!running.compare_exchange_strong(expected, true)) {
         std::cout << "[" << nom << "] Déjà démarré\n";
@@ -95,15 +93,11 @@ void ControleurBase::demarrer() {
 
             while (running.load()) {
                 try {
-                    // Appeler la logique spécifique (CCR, APP ou TWR)
                     processLogic();
-
-                    // Pause de 100ms entre chaque cycle
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 }
                 catch (const std::exception& e) {
                     std::cerr << "[" << nom << "] Erreur dans processLogic: " << e.what() << "\n";
-                    // Continuer malgré l'erreur
                 }
                 catch (...) {
                     std::cerr << "[" << nom << "] Erreur inconnue dans processLogic\n";
@@ -116,18 +110,16 @@ void ControleurBase::demarrer() {
     catch (const std::system_error& e) {
         std::cerr << "[" << nom << "] ERREUR CRÉATION THREAD: " << e.what() << "\n";
         running.store(false);
-        throw;  // Relancer l'exception
+        throw;
     }
 }
 
 void ControleurBase::arreter() {
-    // Vérifier si déjà arrêté
     bool expected = true;
     if (!running.compare_exchange_strong(expected, false)) {
-        return;  // Déjà arrêté
+        return;
     }
 
-    // Attendre que le thread se termine
     if (workerThread.joinable()) {
         try {
             workerThread.join();
@@ -137,8 +129,6 @@ void ControleurBase::arreter() {
         }
     }
 }
-
-// ========== IMPLÉMENTATION DE Message::toJSON() ==========
 
 std::string Message::toJSON() const {
     return "{"

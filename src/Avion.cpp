@@ -17,7 +17,8 @@ Avion::Avion(const std::string& nom, const Position& pos_depart, const Position&
     cap(0.0),
     altitude_cible(dest.altitude),
     etat(EtatAvion::PARKING),
-    enRoute(false) {  // ← AJOUTÉ : Initialisation de enRoute à false
+    enRoute(false),
+    tempsRoulageDebut(0.0) { 
 
     // Calculer le cap vers la destination DÈS LE DÉBUT
     cap = calculerCap(destination);  // ← AJOUTÉ : Calcul du cap initial
@@ -55,16 +56,14 @@ void Avion::demarrer() {
         }
 
         // Petite pause pour ne pas surcharger le CPU (60 FPS)
-        std::this_thread::sleep_for(std::chrono::milliseconds(16));
+            std::this_thread::sleep_for(std::chrono::milliseconds(16));
     }
 }
 
 void Avion::update(double dt) {
     switch (etat) {
     case EtatAvion::PARKING:
-        if (vitesse == 0) {  // ← AJOUTE cette condition
-            etat = EtatAvion::ROULAGE_DECOLLAGE;
-        }
+        updateParking(dt);  // ← Nouvelle méthode
         break;
 
     case EtatAvion::ROULAGE_DECOLLAGE:
@@ -101,25 +100,45 @@ void Avion::update(double dt) {
     }
 }
 
-void Avion::updateRoulageDecollage(double dt) {
-    vitesse = vitesse_roulage;
+void Avion::updateParking(double dt) {
+    // Si c'est la première fois en parking, noter l'heure
+    static bool premiereEntreeParking = true;
 
-    // Calculer le cap vers la destination
+    if (premiereEntreeParking) {
+        tempsParkingDebut = std::chrono::steady_clock::now();
+        premiereEntreeParking = false;
+        std::cout << "[" << nom << "] Attente au parking pendant 5 secondes...\n";
+    }
+
+    // Vérifier si 5 secondes se sont écoulées
+    auto maintenant = std::chrono::steady_clock::now();
+    auto duree = std::chrono::duration_cast<std::chrono::seconds>(maintenant - tempsParkingDebut);
+
+    if (duree.count() >= 5) {
+        setEtat(EtatAvion::ROULAGE_DECOLLAGE);
+        premiereEntreeParking = true;  // Reset pour le prochain parking
+    }
+}
+
+void Avion::updateRoulageDecollage(double dt) {
+    vitesse = vitesse_roulage * 10.0;
     cap = calculerCap(destination);
 
     double distance_parcourue = vitesse * dt;
     position.x += distance_parcourue * cos(cap * M_PI / 180.0);
     position.y += distance_parcourue * sin(cap * M_PI / 180.0);
+    
+    tempsRoulageDebut += dt;  // Accumuler le temps
 
-    // Réduit à 50m de roulage pour passer rapidement au décollage
-    if (position.x > 50) {
-        etat = EtatAvion::DECOLLAGE;
+    // Passer en décollage après 0.5 seconde
+    if (tempsRoulageDebut > 1) {
+        setEtat(EtatAvion::DECOLLAGE);
+        tempsRoulageDebut = 0.0;  // Reset pour la prochaine fois
     }
 }
-
 void Avion::updateDecollage(double dt) {
     if (vitesse < vitesse_croisiere) {
-        vitesse += 10.0 * dt;  // Accélération plus rapide
+        vitesse += 10.0 * dt;
     }
 
     position.altitude += vitesse_montee * 0.5 * dt;
@@ -128,18 +147,16 @@ void Avion::updateDecollage(double dt) {
     position.x += distance_parcourue * cos(cap * M_PI / 180.0);
     position.y += distance_parcourue * sin(cap * M_PI / 180.0);
 
-    // Réduit à 200m pour passer vite en montée
     if (position.altitude >= 200) {
-        etat = EtatAvion::MONTEE;
+        setEtat(EtatAvion::MONTEE);
         altitude_cible = 10000;
     }
 }
 
 void Avion::updateMontee(double dt) {
-    vitesse = vitesse_croisiere;
-    position.altitude += vitesse_montee * dt;
+    vitesse = vitesse_croisiere * 10.0;
+    position.altitude += vitesse_montee * 10.0 * dt;
 
-    // Mettre à jour le cap vers la destination
     cap = calculerCap(destination);
 
     double distance_parcourue = vitesse * dt;
@@ -148,7 +165,7 @@ void Avion::updateMontee(double dt) {
 
     if (position.altitude >= altitude_cible) {
         position.altitude = altitude_cible;
-        etat = EtatAvion::CROISIERE;
+        setEtat(EtatAvion::CROISIERE);
     }
 }
 
@@ -163,16 +180,15 @@ void Avion::updateCroisiere(double dt) {
 
     double distance_restante = distanceVers(destination);
 
-    //  AJOUTE : Arrêter si très proche
-    if (distance_restante < 5000.0) {  // 5 km
+    if (distance_restante < 5000.0) {
         vitesse = 0;
-        position = destination;  // Snap à la destination
-        etat = EtatAvion::PARKING;
+        position = destination;
+        setEtat(EtatAvion::PARKING);
         return;
     }
 
     if (distance_restante < 30000) {
-        etat = EtatAvion::DESCENTE;
+        setEtat(EtatAvion::DESCENTE);
     }
 }
 
@@ -181,19 +197,17 @@ void Avion::updateDescente(double dt) {
     if (position.altitude < 0) position.altitude = 0;
 
     if (vitesse > vitesse_croisiere * 0.7) {
-        vitesse -= 3.0 * dt;  // Ralentissement plus rapide
+        vitesse -= 3.0 * dt;
     }
 
-    // Mettre à jour le cap vers la destination
     cap = calculerCap(destination);
 
     double distance_parcourue = vitesse * dt;
     position.x += distance_parcourue * cos(cap * M_PI / 180.0);
     position.y += distance_parcourue * sin(cap * M_PI / 180.0);
 
-    // Passage en approche à 500m au lieu de 1000m
     if (position.altitude <= 500) {
-        etat = EtatAvion::APPROCHE;
+        setEtat(EtatAvion::APPROCHE);
     }
 }
 
@@ -202,19 +216,17 @@ void Avion::updateApproche(double dt) {
     if (position.altitude < 0) position.altitude = 0;
 
     if (vitesse > 80.0) {
-        vitesse -= 5.0 * dt;  // Ralentissement plus marqué
+        vitesse -= 5.0 * dt;
     }
 
-    // Mettre à jour le cap vers la destination
     cap = calculerCap(destination);
 
     double distance_parcourue = vitesse * dt;
     position.x += distance_parcourue * cos(cap * M_PI / 180.0);
     position.y += distance_parcourue * sin(cap * M_PI / 180.0);
 
-    // Atterrissage à 30m au lieu de 50m
     if (position.altitude <= 30) {
-        etat = EtatAvion::ATTERRISSAGE;
+        setEtat(EtatAvion::ATTERRISSAGE);
     }
 }
 
@@ -222,30 +234,25 @@ void Avion::updateAtterrissage(double dt) {
     position.altitude -= vitesse_descente * 0.5 * dt;
     if (position.altitude < 0) position.altitude = 0;
 
-    vitesse -= 15.0 * dt;  // Freinage plus fort
-    if (vitesse < vitesse_roulage) vitesse = vitesse_roulage;
+    vitesse -= 15.0 * dt;
+    if (vitesse < 0) vitesse = 0;
 
     double distance_parcourue = vitesse * dt;
     position.x += distance_parcourue * cos(cap * M_PI / 180.0);
     position.y += distance_parcourue * sin(cap * M_PI / 180.0);
 
-    if (position.altitude == 0 && vitesse <= vitesse_roulage) {
-        etat = EtatAvion::ROULAGE_ARRIVEE;
+    double distance_destination = distanceVers(destination);
+    if (distance_destination < 5000.0) {
+        vitesse = 0;
+        position = destination;
+        setEtat(EtatAvion::PARKING);
+        std::cout << "[" << nom << "]  Atterri et stationne \n";
     }
 }
 
 void Avion::updateRoulageArrivee(double dt) {
-    vitesse = vitesse_roulage;
-
-    double distance_parcourue = vitesse * dt;
-    position.x += distance_parcourue * cos(cap * M_PI / 180.0);
-    position.y += distance_parcourue * sin(cap * M_PI / 180.0);
-
-    // Arrêt à 50m au lieu de 100m
-    double distance_destination = distanceVers(destination);
-    if (distance_destination < 50) {
-        vitesse = 0;
-    }
+    setEtat(EtatAvion::PARKING);
+    vitesse = 0;
 }
 
 double Avion::distanceVers(const Position& pos) const {
@@ -265,20 +272,6 @@ void Avion::afficherEtat() const {
     std::cout << "[" << nom << "] " << getEtatString() << std::endl;
 }
 
-std::string Avion::getEtatString() const {
-    switch (etat) {
-    case EtatAvion::PARKING: return "PARKING";
-    case EtatAvion::ROULAGE_DECOLLAGE: return "ROULAGE_DECOLLAGE";
-    case EtatAvion::DECOLLAGE: return "DECOLLAGE";
-    case EtatAvion::MONTEE: return "MONTEE";
-    case EtatAvion::CROISIERE: return "CROISIERE";
-    case EtatAvion::DESCENTE: return "DESCENTE";
-    case EtatAvion::APPROCHE: return "APPROCHE";
-    case EtatAvion::ATTERRISSAGE: return "ATTERRISSAGE";
-    case EtatAvion::ROULAGE_ARRIVEE: return "ROULAGE_ARRIVEE";
-    default: return "INCONNU";
-    }
-}
 
 bool Avion::volTermine() const {
     // Arrêter si proche de la destination (< 5 km)

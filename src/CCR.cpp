@@ -105,12 +105,12 @@ void CCR::processLogic() {
     // Affichage debug - Toutes les 5 secondes
     static int compteur = 0;
     if (compteur++ % 50 == 0) {  // 50 * 100ms = 5 secondes
-        std::cout << "[CCR] " << avionsSousControle.size() << " avions sous contrôle\n";
+        std::cout << "[CCR] " << avionsSousControle.size() << " avions sous controle\n";
         for (auto* avion : avionsSousControle) {
             Position pos = avion->getPosition();
             std::cout << "  - " << avion->getNom()
-                << " à (" << (int)(pos.x / 1000) << ", " << (int)(pos.y / 1000) << ") km"
-                << " | État: " << avion->getEtatString() << "\n";
+                << " a (" << (int)(pos.x / 1000) << ", " << (int)(pos.y / 1000) << ") km"
+                << " | Etat: " << avion->getEtatString() << "\n";
         }
     }
 

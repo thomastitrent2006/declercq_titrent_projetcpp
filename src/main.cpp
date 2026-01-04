@@ -120,7 +120,6 @@ void initializeSimulation() {
 
     // Avion 1: Lille -> Nantes
     Avion* p1 = new Avion("AF123", posLille, posNantes);
-    p1->setEtat(EtatAvion::CROISIERE);
     planes.push_back(p1);
     ccr->ajouterAvion(p1);
 
@@ -137,7 +136,7 @@ void initializeSimulation() {
             });
     }
     
-    std::cout << "\n=== DÉMARRAGE DE LA SIMULATION ===\n";
+    std::cout << "\n=== DEMARRAGE DE LA SIMULATION ===\n";
 
     for (auto* plane : planes) {
         if (plane != nullptr) {
@@ -149,7 +148,7 @@ void initializeSimulation() {
                     std::cerr << "Erreur avion " << plane->getNom() << ": " << e.what() << "\n";
                 }
                 });
-            std::cout << "✅ Avion " << plane->getNom() << " démarré\n";
+            std::cout << " Avion " << plane->getNom() << " demarre\n";
         }
     }
 
@@ -157,12 +156,12 @@ void initializeSimulation() {
     std::cout << "\n--- Test CCR ---\n";
     try {
         ccr->demarrer();
-        std::cout << "✅ CCR démarré avec succès\n";
+        std::cout << " CCR demarre avec succes\n";
         std::this_thread::sleep_for(std::chrono::milliseconds(100));  // Laisser le temps de démarrer
     }
     catch (const std::exception& e) {
-        std::cerr << "❌ ERREUR CCR: " << e.what() << "\n";
-        std::cerr << "   → Arrêt de la simulation\n";
+        std::cerr << " ERREUR CCR: " << e.what() << "\n";
+        std::cerr << "   → Arret de la simulation\n";
         return;  // Arrêter si le CCR ne démarre pas
     }
    
@@ -170,18 +169,28 @@ void initializeSimulation() {
     for (size_t i = 0; i < airports.size(); i++) {
         try {
             airports[i]->demarrer();
-            std::cout << "✅ APP " << (i + 1) << " démarré\n";
+            std::cout << " APP " << (i + 1) << " demarre\n";
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
         catch (const std::exception& e) {
-            std::cerr << "❌ ERREUR APP " << (i + 1) << ": " << e.what() << "\n";
+            std::cerr << " ERREUR APP " << (i + 1) << ": " << e.what() << "\n";
+        }
+    }
+    std::cout << "\n--- Test TWR ---\n";
+    for (size_t i = 0; i < towers.size(); i++) {
+        try {
+            towers[i]->demarrer();
+            std::cout << " TWR " << (i + 1) << " demarre\n";
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+        catch (const std::exception& e) {
+            std::cerr << " ERREUR TWR " << (i + 1) << ": " << e.what() << "\n";
         }
     }
     
-    
-    std::cout << "=== SIMULATION DÉMARRÉE ===\n";
-    std::cout << "Avions créés: " << planes.size() << "\n";
-    std::cout << "Aéroports: " << airports.size() << "\n";
+    std::cout << "=== SIMULATION DEMARREE ===\n";
+    std::cout << "Avions crees: " << planes.size() << "\n";
+    std::cout << "Aeroports: " << airports.size() << "\n";
     std::cout << "Tours: " << towers.size() << "\n\n";
 
     // ========== CHARGER LES TEXTURES ==========

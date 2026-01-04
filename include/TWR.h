@@ -7,10 +7,10 @@
 #include <queue>
 
 struct Piste {
-    bool occupee = false;              // ? Initialisé à false
+    bool occupee = false;
     std::string avionActuel;
     std::chrono::steady_clock::time_point heureLiberation;
-    static constexpr int DUREE_ATTERRISSAGE = 30;  // 30 secondes
+    static constexpr int DUREE_ATTERRISSAGE = 5;  
 };
 
 struct Parking {

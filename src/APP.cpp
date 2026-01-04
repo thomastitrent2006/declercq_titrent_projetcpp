@@ -120,25 +120,17 @@ void APP::gererTrajectoires() {
                 if (avion->getNom() == avionId) {
                     avion->setEtat(EtatAvion::ATTERRISSAGE);
 
-                    Message msg;
-                    msg.expediteur = nom;
-                    msg.destinataire = "TWR";
-                    msg.type = "TRANSFERT_AVION";
-                    msg.avionId = avionId;
-                    msg.contenu = "Avion transféré pour atterrissage";
-                    msg.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        std::chrono::system_clock::now().time_since_epoch()).count();
-/*
-                    envoyerMessage(msg);
-                    */
-                    logAction("TRANSFERT_TWR", "Avion " + avionId + " transféré à la tour");
+                    // NE PAS transférer - l'APP gère jusqu'à PARKING
+                    // towerReference->ajouterAvion(avion);  ← COMMENTE
+                    // retirerAvion(avionId);  ← COMMENTE
+
+                    logAction("TRANSFERT_TWR", "Avion " + avionId + " autorisé à atterrir");
                     break;
                 }
             }
         }
     }
 }
-
 bool APP::demanderAutorisationAtterrissage(const std::string& avionId) {
     if (towerReference == nullptr) {
         return false;

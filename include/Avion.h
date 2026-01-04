@@ -1,12 +1,15 @@
-// Avion.h
+Ôªø// Avion.h
 #ifndef AVION_H
 #define AVION_H
+
 #include "Position.h"
 #include <string>
+#include <chrono>        
+#include <thread>        
 #include <cmath>
 #include <iostream>
 
-// …numÈrations
+// √ânum√©rations
 enum class EtatAvion {
     PARKING,
     ROULAGE_DECOLLAGE,
@@ -19,10 +22,6 @@ enum class EtatAvion {
     ROULAGE_ARRIVEE
 };
 
-// Structure Position
-
-   
-
 class Avion {
 private:
     // Identification
@@ -31,22 +30,27 @@ private:
     // Position et mouvement
     Position position;
     double vitesse;                     // Vitesse actuelle (m/s)
-    double cap;                         // Direction (0-360 degrÈs)
-    double altitude_cible;              // Altitude ‡ atteindre
+    double cap;                         // Direction (0-360 degr√©s)
+    double altitude_cible;              // Altitude √† atteindre
 
-    // CaractÈristiques de vol
-    double vitesse_croisiere;           // Vitesse de croisiËre (m/s)
-    double vitesse_montee;              // Vitesse verticale en montÈe (m/s)
+    // Caract√©ristiques de vol
+    double vitesse_croisiere;           // Vitesse de croisi√®re (m/s)
+    double vitesse_montee;              // Vitesse verticale en mont√©e (m/s)
     double vitesse_descente;            // Vitesse verticale en descente (m/s)
     double vitesse_roulage;             // Vitesse au sol (m/s)
 
-    // …tat
+    // √âtat
     EtatAvion etat;
 
     // Destination
     Position destination;
-    // ContrÙle d'exÈcution
+
+    // Contr√¥le d'ex√©cution
     bool enRoute;
+
+    // Temps pour attente au parking
+    std::chrono::steady_clock::time_point tempsParkingDebut;
+    double tempsRoulageDebut;
 
 public:
     // Constructeur
@@ -57,28 +61,39 @@ public:
     Position getPosition() const { return position; }
     double getVitesse() const { return vitesse; }
     double getAltitude() const { return position.altitude; }
-    EtatAvion getEtat() const { return etat; }
+    EtatAvion getEtat() const { return etat; }  // ‚Üê GARDE UNE SEULE FOIS
+    Position getDestination() const { return destination; }
 
     // Setters
-    void setEtat(EtatAvion nouvelEtat) { etat = nouvelEtat; }
+    void setEtat(EtatAvion nouvelEtat) {
+        if (etat != nouvelEtat) {  // Afficher seulement si changement r√©el
+            std::cout << "[" << nom << "] " << getEtatString()
+                << " -> " << getEtatStringFromEnum(nouvelEtat) << "\n";
+        }
+        etat = nouvelEtat;
+    }
 
-    // ContrÙle de l'avion
-    void demarrer();  // DÈmarre la boucle de mise ‡ jour
-    void arreter() { enRoute = false; }  // ArrÍte l'avion
+    // M√©thodes d'√©tat
+    std::string getEtatString() const {
+        return getEtatStringFromEnum(etat);
+    }
 
-    // MÈthode principale de mise ‡ jour
+    // Contr√¥le de l'avion
+    void demarrer();  // D√©marre la boucle de mise √† jour
+    void arreter() { enRoute = false; }  // Arr√™te l'avion
+
+    // M√©thode principale de mise √† jour
     void update(double dt);  // dt = delta temps en secondes
 
     // Affichage
     void afficherEtat() const;
-    std::string getEtatString() const;
 
-    // VÈrification fin de vol
+    // V√©rification fin de vol
     bool volTermine() const;
 
-    Position getDestination() const { return destination; }
 private:
-    // MÈthodes internes de gestion du vol
+    // M√©thodes internes de gestion du vol
+    void updateParking(double dt);
     void updateRoulageDecollage(double dt);
     void updateDecollage(double dt);
     void updateMontee(double dt);
@@ -91,6 +106,21 @@ private:
     // Utilitaires
     double distanceVers(const Position& pos) const;
     double calculerCap(const Position& cible) const;
+
+    std::string getEtatStringFromEnum(EtatAvion e) const {
+        switch (e) {
+        case EtatAvion::PARKING: return "PARKING";
+        case EtatAvion::ROULAGE_DECOLLAGE: return "ROULAGE_DECOLLAGE";
+        case EtatAvion::DECOLLAGE: return "DECOLLAGE";
+        case EtatAvion::MONTEE: return "MONTEE";
+        case EtatAvion::CROISIERE: return "CROISIERE";
+        case EtatAvion::DESCENTE: return "DESCENTE";
+        case EtatAvion::APPROCHE: return "APPROCHE";
+        case EtatAvion::ATTERRISSAGE: return "ATTERRISSAGE";
+        case EtatAvion::ROULAGE_ARRIVEE: return "ROULAGE_ARRIVEE";
+        default: return "INCONNU";
+        }
+    }
 };
 
 #endif // AVION_H

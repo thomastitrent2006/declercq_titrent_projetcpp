@@ -83,13 +83,13 @@ void ControleurBase::logAction(const std::string& action, const std::string& det
 void ControleurBase::demarrer() {
     bool expected = false;
     if (!running.compare_exchange_strong(expected, true)) {
-        std::cout << "[" << nom << "] Déjà démarré\n";
+        std::cout << "[" << nom << "] Deja demarre\n";
         return;
     }
 
     try {
         workerThread = std::thread([this]() {
-            std::cout << "[" << nom << "] Thread démarré\n";
+            std::cout << "[" << nom << "] Thread demarre\n";
 
             while (running.load()) {
                 try {
@@ -104,7 +104,7 @@ void ControleurBase::demarrer() {
                 }
             }
 
-            std::cout << "[" << nom << "] Thread arrêté\n";
+            std::cout << "[" << nom << "] Thread arrete\n";
             });
     }
     catch (const std::system_error& e) {

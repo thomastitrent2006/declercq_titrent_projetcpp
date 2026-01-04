@@ -78,8 +78,18 @@ void TWR::libererParking(const std::string& parkingId) {
         logAction("LIBERATION_PARKING", "Parking " + parkingId + " libéré");
     }
 }
-
 void TWR::processLogic() {
+    static int compteur = 0;
+    if (compteur++ % 50 == 0) {  // Toutes les 5 secondes
+        if (!avionsSousControle.empty() || piste.occupee) {
+            std::cout << "[TWR " << nom << "] ";
+            if (piste.occupee) {
+                std::cout << "Piste occupee [" << piste.avionActuel << "] | ";
+            }
+            std::cout << avionsSousControle.size() << " avions sous controle\n";
+        }
+    }
+
     gererAtterrissages();
     gererRoulage();
     gererDecollages();

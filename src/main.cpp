@@ -60,16 +60,8 @@ void initializeSimulation() {
 
     // Créer les contrôleurs d'approche et tours pour chaque aéroport
    
-    Position posNTE = screenToWorld(Vector2f(280.0f, 450.0f), WINDOW_SIZE_X, WINDOW_SIZE_Y);
-    TWR* twrNTE = new TWR("TWR_NTE");
-    APP* appNTE = new APP("APP_NTE", posNTE, 35000.0f, twrNTE, ccr);
-    ccr->ajouterAeroport("NTE", posNTE, appNTE, 8);
-
     
-    Position posNCE = screenToWorld(Vector2f(800.0f, 850.0f), WINDOW_SIZE_X, WINDOW_SIZE_Y);
-    TWR* twrNCE = new TWR("TWR_NCE");
-    APP* appNCE = new APP("APP_NCE", posNCE, 38000.0f, twrNCE, ccr);
-    ccr->ajouterAeroport("NCE", posNCE, appNCE, 9);
+    
 
     // Créer quelques routes
     
@@ -93,35 +85,24 @@ void initializeSimulation() {
 
     std::vector<Sprite> airportSprites;
 
-    Sprite airport1(aeroportImage);
-    airport1.scale({ 0.3f, 0.3f });
+    Sprite airport1(aeroportImage); /*Lille*/
+    airport1.scale({ 0.2f,0.2f});
     airport1.setPosition({ 600, 80 });
     airportSprites.push_back(airport1);
 
-    Sprite airport2(aeroportImage);
-    airport2.scale({ 0.3f, 0.3f });
-    airport2.setPosition({ 560, 280 });
-    airportSprites.push_back(airport2);
 
-    Sprite airport3(aeroportImage);
-    airport3.scale({ 0.3f, 0.3f });
+	Sprite airport3(aeroportImage); /*Toulouse*/
+    airport3.scale({ 0.2f, 0.2f });
     airport3.setPosition({ 470, 780 });
     airportSprites.push_back(airport3);
 
-    Sprite airport4(aeroportImage);
-    airport4.scale({ 0.3f, 0.3f });
+    Sprite airport4(aeroportImage);  /*Nantes*/
+    airport4.scale({ 0.2f, 0.2f });
     airport4.setPosition({ 280, 450 });
     airportSprites.push_back(airport4);
+    
 
-    Sprite airport5(aeroportImage);
-    airport5.scale({ 0.3f, 0.3f });
-    airport5.setPosition({ 750, 620 });
-    airportSprites.push_back(airport5);
-
-    Sprite airport6(aeroportImage); /*Marseille*/
-    airport6.scale({ 0.2f, 0.2f });
-    airport6.setPosition({ 800, 850 });
-    airportSprites.push_back(airport6);
+   
 
     // Charger l'avion
     Texture airplane;
@@ -151,8 +132,7 @@ void initializeSimulation() {
 
         // Mettre à jour tous les APP
        
-        appNTE->processLogic();
-        appNCE->processLogic();
+        
 
         // Mettre à jour toutes les tours
        /* twrCDG->processLogic();
@@ -175,11 +155,7 @@ void initializeSimulation() {
     }
 
     // Nettoyage
-    delete ccr;
-    
-    
-    delete appNTE; delete twrNTE;
-    delete appNCE; delete twrNCE;
+   
 }
 
 int main() {

@@ -1,6 +1,8 @@
 // Avion.cpp
 #include "../include/Avion.h"
 #include <cmath>
+#include <chrono>
+#include <thread>
 #include <iostream>
 
 #ifndef M_PI
@@ -11,13 +13,45 @@ Avion::Avion(const std::string& nom, const Position& pos_depart, const Position&
     : nom(nom), position(pos_depart), destination(dest),
     vitesse(0), cap(0), altitude_cible(0), etat(EtatAvion::PARKING) {
 
+    vitesse = 0.0;
+    cap = 0.0;
+    altitude_cible = dest.altitude;
+
     // Paramètres de vol adaptés pour simulation accélérée
     vitesse_croisiere = 250.0;
     vitesse_montee = 50.0;          // Montée plus rapide
     vitesse_descente = 40.0;        // Descente plus rapide
     vitesse_roulage = 5.0;
+    etat = EtatAvion::PARKING;
+    
+}
 
-    cap = calculerCap(destination);
+void Avion::demarrer() {
+    enRoute = true;
+
+    auto dernierTemps = std::chrono::steady_clock::now();
+
+    while (enRoute) {
+        // Calculer le delta temps
+        auto maintenant = std::chrono::steady_clock::now();
+        auto duree = std::chrono::duration_cast<std::chrono::milliseconds>(maintenant - dernierTemps);
+        double dt = duree.count() / 1000.0;  // Convertir en secondes
+        dernierTemps = maintenant;
+
+        // Mettre à jour l'avion
+        if (dt > 0.0 && dt < 1.0) {  // Limiter dt pour éviter les sauts
+            update(dt);
+        }
+
+        // Vérifier si le vol est terminé
+        if (volTermine()) {
+            enRoute = false;
+            break;
+        }
+
+        // Petite pause pour ne pas surcharger le CPU (60 FPS)
+        std::this_thread::sleep_for(std::chrono::milliseconds(16));
+    }
 }
 
 void Avion::update(double dt) {

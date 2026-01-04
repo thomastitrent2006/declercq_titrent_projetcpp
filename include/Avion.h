@@ -45,6 +45,8 @@ private:
 
     // Destination
     Position destination;
+    // Contrôle d'exécution
+    bool enRoute;
 
 public:
     // Constructeur
@@ -59,6 +61,10 @@ public:
 
     // Setters
     void setEtat(EtatAvion nouvelEtat) { etat = nouvelEtat; }
+
+    // Contrôle de l'avion
+    void demarrer();  // Démarre la boucle de mise à jour
+    void arreter() { enRoute = false; }  // Arrête l'avion
 
     // Méthode principale de mise à jour
     void update(double dt);  // dt = delta temps en secondes

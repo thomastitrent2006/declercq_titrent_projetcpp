@@ -28,6 +28,7 @@ private:
     double altitudeCroisiere;
 
     void processLogic() override;
+
     void gererSeparation();           // Éviter les collisions
     void gererFlux();                 // Réguler le flux vers les aéroports
     void transfererVersAPP();         // Transférer les avions aux APP

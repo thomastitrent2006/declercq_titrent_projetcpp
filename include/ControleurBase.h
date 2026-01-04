@@ -54,7 +54,7 @@ public:
     // Démarrage et arrêt du thread
     void demarrer();
     void arreter();
-
+    
     std::string getNom() const { return nom; }
 };
 

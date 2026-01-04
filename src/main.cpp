@@ -123,11 +123,10 @@ void initializeSimulation() {
     planes.push_back(p1);
     ccr->ajouterAvion(p1);
 
-    // Avion 2: Toulouse -> Lille (optionnel)
-    // Avion* p2 = new Avion("LH456", posToulouse, posLille);
-    // p2->setEtat(EtatAvion::CROISIERE);
-    // planes.push_back(p2);
-    // ccr->ajouterAvion(p2);
+     // Avion 2: Toulouse -> Lille (optionnel)
+     Avion* p2 = new Avion("LH456", posToulouse, posLille);
+     planes.push_back(p2);
+     ccr->ajouterAvion(p2);
 
     // ========== DÉMARRER LES AVIONS DANS DES THREADS ==========
     for (auto* plane : planes) {

@@ -59,42 +59,20 @@ void initializeSimulation() {
     CCR* ccr = new CCR("CCR_France", 10000.0);
 
     // Créer les contrôleurs d'approche et tours pour chaque aéroport
-    Position posCDG = screenToWorld(Vector2f(600.0f, 80.0f), WINDOW_SIZE_X, WINDOW_SIZE_Y);
-    TWR* twrCDG = new TWR("TWR_CDG");
-    APP* appCDG = new APP("APP_CDG", posCDG, 50000.0f, twrCDG, ccr);
-    ccr->ajouterAeroport("CDG", posCDG, appCDG, 15);
-
-    Position posORY = screenToWorld(Vector2f(560.0f, 280.0f), WINDOW_SIZE_X, WINDOW_SIZE_Y);
-    TWR* twrORY = new TWR("TWR_ORY");
-    APP* appORY = new APP("APP_ORY", posORY, 45000.0f, twrORY, ccr);
-    ccr->ajouterAeroport("ORY", posORY, appORY, 12);
-
-    Position posMRS = screenToWorld(Vector2f(470.0f, 780.0f), WINDOW_SIZE_X, WINDOW_SIZE_Y);
-    TWR* twrMRS = new TWR("TWR_MRS");
-    APP* appMRS = new APP("APP_MRS", posMRS, 40000.0f, twrMRS, ccr);
-    ccr->ajouterAeroport("MRS", posMRS, appMRS, 10);
-
+   
     Position posNTE = screenToWorld(Vector2f(280.0f, 450.0f), WINDOW_SIZE_X, WINDOW_SIZE_Y);
     TWR* twrNTE = new TWR("TWR_NTE");
     APP* appNTE = new APP("APP_NTE", posNTE, 35000.0f, twrNTE, ccr);
     ccr->ajouterAeroport("NTE", posNTE, appNTE, 8);
 
-    Position posLYS = screenToWorld(Vector2f(750.0f, 620.0f), WINDOW_SIZE_X, WINDOW_SIZE_Y);
-    TWR* twrLYS = new TWR("TWR_LYS");
-    APP* appLYS = new APP("APP_LYS", posLYS, 40000.0f, twrLYS, ccr);
-    ccr->ajouterAeroport("LYS", posLYS, appLYS, 10);
-
+    
     Position posNCE = screenToWorld(Vector2f(800.0f, 850.0f), WINDOW_SIZE_X, WINDOW_SIZE_Y);
     TWR* twrNCE = new TWR("TWR_NCE");
     APP* appNCE = new APP("APP_NCE", posNCE, 38000.0f, twrNCE, ccr);
     ccr->ajouterAeroport("NCE", posNCE, appNCE, 9);
 
     // Créer quelques routes
-    ccr->ajouterRoute("CDG", "MRS");
-    ccr->ajouterRoute("CDG", "NCE");
-    ccr->ajouterRoute("ORY", "LYS");
-    ccr->ajouterRoute("NTE", "MRS");
-
+    
     // Créer un vol de test
     ccr->creerVol("AF123", "CDG", "MRS");
 
@@ -140,7 +118,7 @@ void initializeSimulation() {
     airport5.setPosition({ 750, 620 });
     airportSprites.push_back(airport5);
 
-    Sprite airport6(aeroportImage);
+    Sprite airport6(aeroportImage); /*Marseille*/
     airport6.scale({ 0.2f, 0.2f });
     airport6.setPosition({ 800, 850 });
     airportSprites.push_back(airport6);
@@ -172,11 +150,8 @@ void initializeSimulation() {
        /* ccr->processLogic();*/
 
         // Mettre à jour tous les APP
-        appCDG->processLogic();
-        appORY->processLogic();
-        appMRS->processLogic();
+       
         appNTE->processLogic();
-        appLYS->processLogic();
         appNCE->processLogic();
 
         // Mettre à jour toutes les tours
@@ -201,11 +176,9 @@ void initializeSimulation() {
 
     // Nettoyage
     delete ccr;
-    delete appCDG; delete twrCDG;
-    delete appORY; delete twrORY;
-    delete appMRS; delete twrMRS;
+    
+    
     delete appNTE; delete twrNTE;
-    delete appLYS; delete twrLYS;
     delete appNCE; delete twrNCE;
 }
 

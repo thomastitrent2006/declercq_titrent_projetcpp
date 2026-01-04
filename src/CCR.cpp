@@ -239,7 +239,7 @@ bool CCR::verifierCapaciteAeroport(const std::string& aeroportId) {
     return it->second.avionsEnApproche < it->second.capaciteMax;
 }
 
-double CCR::calculerSeparationMinimale(Avion* a1, Avion* a2) const {
+double CCR::calculerSeparationMinimale(const Avion* a1, const Avion* a2) const {
     Position pos1 = a1->getPosition();
     Position pos2 = a2->getPosition();
     return pos1.distance3DTo(pos2);
@@ -253,8 +253,9 @@ std::vector<std::pair<std::string, std::string>> CCR::detecterRisquesCollision()
 
     for (size_t i = 0; i < avionsSousControle.size(); i++) {
         for (size_t j = i + 1; j < avionsSousControle.size(); j++) {
-            double distance = calculerSeparationMinimale(
-                avionsSousControle[i], avionsSousControle[j]);
+            Position pos1 = avionsSousControle[i]->getPosition();
+            Position pos2 = avionsSousControle[j]->getPosition();
+            double distance = pos1.distance3DTo(pos2);
 
             if (distance < DISTANCE_ALERTE) {
                 risques.push_back({

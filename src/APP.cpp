@@ -20,7 +20,7 @@ APP::APP(const std::string& nom, const Position& centre, float rayon,
 
 void APP::processLogic() {
     gererNouvellesArrivees();
-    gererUrgences();
+    /*gererUrgences();*/
     gererTrajectoires();
 }
 

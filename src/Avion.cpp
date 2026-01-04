@@ -1,4 +1,4 @@
-// Avion.cpp
+Ôªø// Avion.cpp - VERSION CORRIG√âE
 #include "../include/Avion.h"
 #include <cmath>
 #include <chrono>
@@ -10,21 +10,26 @@
 #endif
 
 Avion::Avion(const std::string& nom, const Position& pos_depart, const Position& dest)
-    : nom(nom), position(pos_depart), destination(dest),
-    vitesse(0), cap(0), altitude_cible(0), etat(EtatAvion::PARKING) {
+    : nom(nom),
+    position(pos_depart),
+    destination(dest),
+    vitesse(0.0),
+    cap(0.0),
+    altitude_cible(dest.altitude),
+    etat(EtatAvion::PARKING),
+    enRoute(false) {  // ‚Üê AJOUT√â : Initialisation de enRoute √† false
 
-    vitesse = 0.0;
-    cap = 0.0;
-    altitude_cible = dest.altitude;
+    // Calculer le cap vers la destination D√àS LE D√âBUT
+    cap = calculerCap(destination);  // ‚Üê AJOUT√â : Calcul du cap initial
 
-    // ParamËtres de vol adaptÈs pour simulation accÈlÈrÈe
+    // Param√®tres de vol adapt√©s pour simulation acc√©l√©r√©e
     vitesse_croisiere = 250.0;
-    vitesse_montee = 50.0;          // MontÈe plus rapide
+    vitesse_montee = 50.0;          // Mont√©e plus rapide
     vitesse_descente = 40.0;        // Descente plus rapide
     vitesse_roulage = 5.0;
-    etat = EtatAvion::PARKING;
-    
 }
+
+
 
 void Avion::demarrer() {
     enRoute = true;
@@ -38,12 +43,12 @@ void Avion::demarrer() {
         double dt = duree.count() / 1000.0;  // Convertir en secondes
         dernierTemps = maintenant;
 
-        // Mettre ‡ jour l'avion
-        if (dt > 0.0 && dt < 1.0) {  // Limiter dt pour Èviter les sauts
+        // Mettre √† jour l'avion
+        if (dt > 0.0 && dt < 1.0) {  // Limiter dt pour √©viter les sauts
             update(dt);
         }
 
-        // VÈrifier si le vol est terminÈ
+        // V√©rifier si le vol est termin√©
         if (volTermine()) {
             enRoute = false;
             break;
@@ -57,7 +62,9 @@ void Avion::demarrer() {
 void Avion::update(double dt) {
     switch (etat) {
     case EtatAvion::PARKING:
-        etat = EtatAvion::ROULAGE_DECOLLAGE;
+        if (vitesse == 0) {  // ‚Üê AJOUTE cette condition
+            etat = EtatAvion::ROULAGE_DECOLLAGE;
+        }
         break;
 
     case EtatAvion::ROULAGE_DECOLLAGE:
@@ -97,11 +104,14 @@ void Avion::update(double dt) {
 void Avion::updateRoulageDecollage(double dt) {
     vitesse = vitesse_roulage;
 
+    // Calculer le cap vers la destination
+    cap = calculerCap(destination);
+
     double distance_parcourue = vitesse * dt;
     position.x += distance_parcourue * cos(cap * M_PI / 180.0);
     position.y += distance_parcourue * sin(cap * M_PI / 180.0);
 
-    // RÈduit ‡ 50m de roulage pour passer rapidement au dÈcollage
+    // R√©duit √† 50m de roulage pour passer rapidement au d√©collage
     if (position.x > 50) {
         etat = EtatAvion::DECOLLAGE;
     }
@@ -109,7 +119,7 @@ void Avion::updateRoulageDecollage(double dt) {
 
 void Avion::updateDecollage(double dt) {
     if (vitesse < vitesse_croisiere) {
-        vitesse += 10.0 * dt;  // AccÈlÈration plus rapide
+        vitesse += 10.0 * dt;  // Acc√©l√©ration plus rapide
     }
 
     position.altitude += vitesse_montee * 0.5 * dt;
@@ -118,7 +128,7 @@ void Avion::updateDecollage(double dt) {
     position.x += distance_parcourue * cos(cap * M_PI / 180.0);
     position.y += distance_parcourue * sin(cap * M_PI / 180.0);
 
-    // RÈduit ‡ 200m pour passer vite en montÈe
+    // R√©duit √† 200m pour passer vite en mont√©e
     if (position.altitude >= 200) {
         etat = EtatAvion::MONTEE;
         altitude_cible = 10000;
@@ -128,6 +138,9 @@ void Avion::updateDecollage(double dt) {
 void Avion::updateMontee(double dt) {
     vitesse = vitesse_croisiere;
     position.altitude += vitesse_montee * dt;
+
+    // Mettre √† jour le cap vers la destination
+    cap = calculerCap(destination);
 
     double distance_parcourue = vitesse * dt;
     position.x += distance_parcourue * cos(cap * M_PI / 180.0);
@@ -140,13 +153,16 @@ void Avion::updateMontee(double dt) {
 }
 
 void Avion::updateCroisiere(double dt) {
-    vitesse = vitesse_croisiere;
+    vitesse = vitesse_croisiere * 50.0;  // ‚Üê x50 plus rapide pour les tests !
+
+    // Mettre √† jour le cap vers la destination
+    cap = calculerCap(destination);
 
     double distance_parcourue = vitesse * dt;
     position.x += distance_parcourue * cos(cap * M_PI / 180.0);
     position.y += distance_parcourue * sin(cap * M_PI / 180.0);
 
-    // Commence la descente ‡ 30km au lieu de 20km
+    // Commence la descente √† 30km
     double distance_restante = distanceVers(destination);
     if (distance_restante < 30000) {
         etat = EtatAvion::DESCENTE;
@@ -161,11 +177,14 @@ void Avion::updateDescente(double dt) {
         vitesse -= 3.0 * dt;  // Ralentissement plus rapide
     }
 
+    // Mettre √† jour le cap vers la destination
+    cap = calculerCap(destination);
+
     double distance_parcourue = vitesse * dt;
     position.x += distance_parcourue * cos(cap * M_PI / 180.0);
     position.y += distance_parcourue * sin(cap * M_PI / 180.0);
 
-    // Passage en approche ‡ 500m au lieu de 1000m
+    // Passage en approche √† 500m au lieu de 1000m
     if (position.altitude <= 500) {
         etat = EtatAvion::APPROCHE;
     }
@@ -176,14 +195,17 @@ void Avion::updateApproche(double dt) {
     if (position.altitude < 0) position.altitude = 0;
 
     if (vitesse > 80.0) {
-        vitesse -= 5.0 * dt;  // Ralentissement plus marquÈ
+        vitesse -= 5.0 * dt;  // Ralentissement plus marqu√©
     }
+
+    // Mettre √† jour le cap vers la destination
+    cap = calculerCap(destination);
 
     double distance_parcourue = vitesse * dt;
     position.x += distance_parcourue * cos(cap * M_PI / 180.0);
     position.y += distance_parcourue * sin(cap * M_PI / 180.0);
 
-    // Atterrissage ‡ 30m au lieu de 50m
+    // Atterrissage √† 30m au lieu de 50m
     if (position.altitude <= 30) {
         etat = EtatAvion::ATTERRISSAGE;
     }
@@ -212,7 +234,7 @@ void Avion::updateRoulageArrivee(double dt) {
     position.x += distance_parcourue * cos(cap * M_PI / 180.0);
     position.y += distance_parcourue * sin(cap * M_PI / 180.0);
 
-    // ArrÍt ‡ 50m au lieu de 100m
+    // Arr√™t √† 50m au lieu de 100m
     double distance_destination = distanceVers(destination);
     if (distance_destination < 50) {
         vitesse = 0;

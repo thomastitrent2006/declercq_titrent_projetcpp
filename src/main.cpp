@@ -136,18 +136,33 @@ void initializeSimulation() {
             plane->demarrer();
             });
     }
-
+    
     // ========== DÉMARRER LES CONTRÔLEURS (CCR, APP, TWR) ==========
-    ccr->demarrer();  // Lance le thread du CCR
+    for (auto* plane : planes) {
+        if (plane != nullptr) {
+            planeThreads.emplace_back([plane]() {
+                try {
+                    plane->demarrer();  // ← L'avion bouge !
+                }
+                catch (const std::exception& e) {
+                    std::cerr << "Erreur avion: " << e.what() << "\n";
+                }
+                });
+        }
+    }
 
+    // ========== NE PAS DÉMARRER LES CONTRÔLEURS ==========
+    // ❌ LAISSE CECI EN COMMENTAIRE pour l'instant
+    /*
+    ccr->demarrer();
     for (auto* airport : airports) {
-        airport->demarrer();  // Lance le thread de chaque APP
+        airport->demarrer();
     }
-
     for (auto* tower : towers) {
-        tower->demarrer();  // Lance le thread de chaque TWR
+        tower->demarrer();
     }
-
+    */
+    
     std::cout << "=== SIMULATION DÉMARRÉE ===\n";
     std::cout << "Avions créés: " << planes.size() << "\n";
     std::cout << "Aéroports: " << airports.size() << "\n";

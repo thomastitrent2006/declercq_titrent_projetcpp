@@ -169,7 +169,7 @@ void Avion::updateParking(double dt) {
     if (duree.count() >= tempsAttenteParking) {
         nombreVols++;
 
-        /
+        
         if (nombreVols > 1) {
             choisirNouvelleDestination();
         }

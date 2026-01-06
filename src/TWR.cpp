@@ -159,7 +159,7 @@ void TWR::gererDecollages() {
         if (avionPrioritaire != nullptr) {
             avionPrioritaire->setEtat(EtatAvion::ROULAGE_DECOLLAGE);
 
-            // Libérer le parking directement (on a déjà le lock)
+            
             for (auto& pair : parkings) {
                 if (pair.second.occupee && pair.second.avionActuel == avionPrioritaire->getNom()) {
                     pair.second.occupee = false;

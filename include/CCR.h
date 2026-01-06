@@ -9,16 +9,16 @@
 struct Aeroport {
     std::string nom;
     Position position;
-    APP* controleurApproche = nullptr;  // ? Initialisé à nullptr
-    int capaciteMax = 0;                // ? Initialisé à 0
-    int avionsEnApproche = 0;           // ? Initialisé à 0
+    APP* controleurApproche = nullptr;  
+    int capaciteMax = 0;                
+    int avionsEnApproche = 0;           
 };
 
 struct Route {
     std::string depart;
     std::string arrivee;
     double distance = 0.0;
-    std::vector<Position> waypoints; // Points de passage
+    std::vector<Position> waypoints; 
 };
 
 class CCR : public ControleurBase {

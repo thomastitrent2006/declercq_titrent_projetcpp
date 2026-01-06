@@ -1,4 +1,4 @@
-﻿// Avion.cpp - VERSION CORRIGÉE
+﻿
 #include "../include/Avion.h"
 #include <cmath>
 #include <chrono>
@@ -25,9 +25,9 @@ Avion::Avion(const std::string& nom, const Position& pos_depart,
     etat(EtatAvion::PARKING),
     enRoute(false),
     tempsRoulageDebut(0.0),
-    nombreVols(0),  // ← Initialiser compteur
+    nombreVols(0),  
     premierVol(true),
-    enParking(false),  // ← AJOUTE
+    enParking(false),  
     tempsAttenteParking(5) {  
 
     if (!destinationsPossibles.empty()) {
@@ -104,7 +104,7 @@ void Avion::choisirNouvelleDestination() {
 void Avion::update(double dt) {
     switch (etat) {
     case EtatAvion::PARKING:
-        updateParking(dt);  // ← Nouvelle méthode
+        updateParking(dt);  
         break;
 
     case EtatAvion::ROULAGE_DECOLLAGE:
@@ -149,8 +149,7 @@ void Avion::updateParking(double dt) {
         if (premierVol) {
             tempsAttenteParking = 5;
             premierVol = false;
-            // ❌ NE PAS APPELER choisirNouvelleDestination() ici
-            // La destination est déjà choisie dans le constructeur
+           
             std::cout << "[" << nom << "] Premier vol - Attente 5 secondes...\n";
         }
         else {
@@ -170,7 +169,7 @@ void Avion::updateParking(double dt) {
     if (duree.count() >= tempsAttenteParking) {
         nombreVols++;
 
-        // ✅ Choisir nouvelle destination SEULEMENT pour les vols suivants
+        /
         if (nombreVols > 1) {
             choisirNouvelleDestination();
         }
@@ -242,7 +241,7 @@ void Avion::updateCroisiere(double dt) {
 
     double distance_restante = distanceVers(destination);
 
-    // ✅ VÉRIFIE LA DISTANCE AVANT DE PASSER EN PARKING
+    
     if (distance_restante < 5000.0) {  // 5 km
         vitesse = 0;
         position = destination;
@@ -250,8 +249,8 @@ void Avion::updateCroisiere(double dt) {
         return;
     }
 
-    // ✅ PASSE EN DESCENTE ASSEZ TÔT (100 km au lieu de 50 km)
-    if (distance_restante < 100000.0) {  // ← CHANGE 50000 en 100000
+    
+    if (distance_restante < 100000.0) {  
         setEtat(EtatAvion::DESCENTE);
     }
 }

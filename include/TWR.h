@@ -15,9 +15,9 @@ struct Piste {
 
 struct Parking {
     std::string id;
-    bool occupee = false;              // ? Initialisé à false
+    bool occupee = false;              
     std::string avionActuel;
-    double distancePiste = 0.0;        // ? Initialisé à 0.0
+    double distancePiste = 0.0;        
     Position position;
 };
 

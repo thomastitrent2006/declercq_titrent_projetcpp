@@ -101,9 +101,9 @@ void CCR::creerVol(const std::string& nomAvion, const std::string& depart,
 }
 
 void CCR::processLogic() {
-    // Affichage debug - Toutes les 5 secondes
+    
     static int compteur = 0;
-    if (compteur++ % 50 == 0) {  // 50 * 100ms = 5 secondes
+    if (compteur++ % 50 == 0) {  
         std::cout << "[CCR] " << avionsSousControle.size() << " avions sous controle\n";
         for (auto* avion : avionsSousControle) {
             Position pos = avion->getPosition();
@@ -143,17 +143,6 @@ void CCR::gererSeparation() {
                 logAction("CONFLIT_DETECTE",
                     "Conflit entre " + a1->getNom() + " et " + a2->getNom() +
                     " - distance: " + std::to_string(static_cast<int>(distanceHorizontale)) + "m");
-
-                // ERREUR: setPosition n'existe pas dans Avion
-                // Pour résoudre les conflits, il faudrait ajouter setPosition à la classe Avion
-                // Résolution simple: modifier l'altitude d'un des avions
-                // Position nouvellePos = pos2;
-                // nouvellePos.altitude += 500.0;
-                // a2->setPosition(nouvellePos);
-
-                // logAction("RESOLUTION_CONFLIT",
-                //     a2->getNom() + " monte à " +
-                //     std::to_string(static_cast<int>(nouvellePos.altitude)) + "m");
             }
         }
     }

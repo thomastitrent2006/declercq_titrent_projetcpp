@@ -56,12 +56,7 @@ Vector2f worldToScreenDynamic(const Position& posAvion,
     const std::vector<Vector2f>& screenAirports,
     const std::vector<Position>& worldAirports) {
 
-    // Les coordonnées monde sont centrées sur (0, 0)
-    // La carte fait 1000 km de large et 950 km de haut
-
-    // Conversion : position monde (mètres) -> position écran (pixels)
-    // Monde : x ∈ [-500000, 500000] m, y ∈ [-475000, 475000] m
-    // Écran : x ∈ [0, 1200] px, y ∈ [0, 1104] px
+    
 
     const double MONDE_MIN_X = -500000.0;  // -500 km
     const double MONDE_MAX_X = 500000.0;   // +500 km
@@ -89,13 +84,13 @@ void initializeSimulation() {
     RenderWindow window(VideoMode({ WINDOW_SIZE_X, WINDOW_SIZE_Y }), "Air Traffic Control");
     window.setFramerateLimit(60);
 
-    // ========== VECTEURS POUR STOCKER LES INSTANCES ==========
+  
     std::vector<Avion*> planes;
     std::vector<APP*> airports;
     std::vector<TWR*> towers;
     std::vector<std::thread> planeThreads;
 
-    // ========== POSITIONS DES AÉROPORTS EN COORDONNÉES ÉCRAN ==========
+   
     Vector2f screenLille(600, 80);
     Vector2f screenNantes(280, 450);
     Vector2f screenToulouse(470, 780);
@@ -110,10 +105,10 @@ void initializeSimulation() {
     posNantes.altitude = 10000.0;
     posToulouse.altitude = 10000.0;
 
-    // ========== CRÉER LE CCR ==========
+    
     CCR* ccr = new CCR("CCR_France", 10000.0);
 
-    // ========== CRÉER LES TOURS ET AÉROPORTS ==========
+   
 
     // Lille
     TWR* twrLille = new TWR("TWR_Lille");
@@ -139,35 +134,35 @@ void initializeSimulation() {
     APP* appToulouse = new APP("APP_Toulouse", posToulouse, 50000.0, twrToulouse, ccr);
     airports.push_back(appToulouse);
 
-    // ========== AJOUTER LES AÉROPORTS AU CCR ==========
+    
     ccr->ajouterAeroport("Lille", posLille, appLille, 5);
     ccr->ajouterAeroport("Nantes", posNantes, appNantes, 5);
     ccr->ajouterAeroport("Toulouse", posToulouse, appToulouse, 5);
 
-    // ========== CRÉER LES ROUTES ==========
+    
     ccr->ajouterRoute("Lille", "Nantes");
     ccr->ajouterRoute("Nantes", "Toulouse");
     ccr->ajouterRoute("Toulouse", "Lille");
 
-    // ========== CRÉER LES AVIONS ==========
+    
     std::vector<Position> toutesDestinations = { posLille, posNantes, posToulouse };
-    // Avion 1: Lille -> Nantes
+    
     Avion* p1 = new Avion("AF123", posLille, toutesDestinations);
     planes.push_back(p1);
     ccr->ajouterAvion(p1);
 
-    // Avion 2: LH456 - peut aller à n'importe quel aéroport  
+    
     Avion* p2 = new Avion("LH456", posToulouse, toutesDestinations);
     planes.push_back(p2);
     ccr->ajouterAvion(p2);
 
-    // Avion 3: BA789 - peut aller à n'importe quel aéroport
+    
     Avion* p3 = new Avion("BA789", posNantes, toutesDestinations);
     planes.push_back(p3);
     ccr->ajouterAvion(p3);
 
     Avion::demarrerSimulation();
-    // ========== DÉMARRER LES AVIONS DANS DES THREADS ==========
+    
     for (auto* plane : planes) {
         planeThreads.emplace_back([plane]() {
             plane->demarrer();
@@ -190,7 +185,7 @@ void initializeSimulation() {
         }
     }
 
-    // ========== ÉTAPE 1 : TESTER LE CCR UNIQUEMENT ==========
+    
     std::cout << "\n--- Test CCR ---\n";
     try {
         ccr->demarrer();
@@ -231,7 +226,7 @@ void initializeSimulation() {
     std::cout << "Aeroports: " << airports.size() << "\n";
     std::cout << "Tours: " << towers.size() << "\n\n";
 
-    // ========== CHARGER LES TEXTURES ==========
+  
 
     // Carte
     Texture backgroundImage;
@@ -282,15 +277,15 @@ void initializeSimulation() {
 
     Clock clock;
 
-    // ========== BOUCLE PRINCIPALE SFML ==========
+    
     while (window.isOpen()) {
-        // ========== GESTION DES ÉVÉNEMENTS ==========
+        
         while (const std::optional<Event> event = window.pollEvent()) {
             if ((event->is<sf::Event::KeyPressed>() &&
                 event->getIf<sf::Event::KeyPressed>()->code == sf::Keyboard::Key::Escape) ||
                 event->is<sf::Event::Closed>()) {
 
-                // Arrêter tous les avions avant de fermer
+               
                 for (auto* plane : planes) {
                     plane->arreter();
                 }
@@ -315,11 +310,9 @@ void initializeSimulation() {
 
         float deltaTime = clock.restart().asSeconds();
 
-        // ========== LA LOGIQUE TOURNE DÉJÀ DANS LES THREADS ==========
-        // Les contrôleurs (CCR, APP, TWR) tournent automatiquement via demarrer()
-        // Pas besoin d'appeler processLogic() ici !
+       
 
-        // ========== METTRE À JOUR LES POSITIONS DES SPRITES D'AVIONS ==========
+        
         // Boucler sur tous les avions
         std::vector<Vector2f> screenAirports = { screenLille, screenNantes, screenToulouse };
         std::vector<Position> worldAirports = { posLille, posNantes, posToulouse };
@@ -331,7 +324,7 @@ void initializeSimulation() {
             planeSprites[i].setPosition(screenPos);
         }
 
-        // ========== RENDU ==========
+        
         window.clear(Color::Black);
 
         // 1. Dessiner la carte de fond
@@ -351,7 +344,7 @@ void initializeSimulation() {
         window.display();
     }
 
-    // ========== NETTOYAGE ==========
+    
 
     // Arrêter les avions
     for (auto* plane : planes) {

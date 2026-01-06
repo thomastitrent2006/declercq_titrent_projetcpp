@@ -56,9 +56,9 @@ std::vector<Message> ControleurBase::getMessagesRecus() const {
     return historiqueMessages;
 }
 
-// ? SUPPRIME LE LOCK ICI - C'est la cause du deadlock !
+
 void ControleurBase::logMessage(const Message& msg) {
-    // PAS DE LOCK - appelé depuis des fonctions qui ont déjà le lock
+    
     if (logFile.is_open()) {
         logFile << msg.toJSON() << ",\n";
         logFile.flush();
@@ -66,7 +66,7 @@ void ControleurBase::logMessage(const Message& msg) {
 }
 
 void ControleurBase::logAction(const std::string& action, const std::string& details) {
-    // PAS DE LOCK ICI NON PLUS
+   
     Message msg;
     msg.expediteur = nom;
     msg.destinataire = "LOG";

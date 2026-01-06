@@ -120,10 +120,6 @@ void APP::gererTrajectoires() {
                 if (avion->getNom() == avionId) {
                     avion->setEtat(EtatAvion::ATTERRISSAGE);
 
-                    // NE PAS transférer - l'APP gère jusqu'à PARKING
-                    // towerReference->ajouterAvion(avion);  ← COMMENTE
-                    // retirerAvion(avionId);  ← COMMENTE
-
                     logAction("TRANSFERT_TWR", "Avion " + avionId + " autorisé à atterrir");
                     break;
                 }

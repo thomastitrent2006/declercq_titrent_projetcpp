@@ -4,29 +4,48 @@
 #include <chrono>
 #include <thread>
 #include <iostream>
+#include <random>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
-Avion::Avion(const std::string& nom, const Position& pos_depart, const Position& dest)
+std::chrono::steady_clock::time_point Avion::tempsDebutSimulation;
+bool Avion::simulationDemarree = false;
+
+Avion::Avion(const std::string& nom, const Position& pos_depart,
+    const std::vector<Position>& destinations)
     : nom(nom),
     position(pos_depart),
-    destination(dest),
+    positionDepart(pos_depart),  // ← Sauvegarder le départ
+    destinationsPossibles(destinations),  // ← Liste des destinations
     vitesse(0.0),
     cap(0.0),
-    altitude_cible(dest.altitude),
+    altitude_cible(10000.0),
     etat(EtatAvion::PARKING),
     enRoute(false),
-    tempsRoulageDebut(0.0) { 
+    tempsRoulageDebut(0.0),
+    nombreVols(0),  // ← Initialiser compteur
+    premierVol(true),
+    enParking(false),  // ← AJOUTE
+    tempsAttenteParking(5) {  
 
-    // Calculer le cap vers la destination DÈS LE DÉBUT
-    cap = calculerCap(destination);  // ← AJOUTÉ : Calcul du cap initial
+    if (!destinationsPossibles.empty()) {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(0, destinationsPossibles.size() - 1);
+        destination = destinationsPossibles[dis(gen)];
+        cap = calculerCap(destination);
 
-    // Paramètres de vol adaptés pour simulation accélérée
+        std::cout << "[" << nom << "] Destination initiale: "
+            << "(" << (int)(destination.x / 1000) << ", "
+            << (int)(destination.y / 1000) << ") km\n";
+    }
+
+    // Paramètres de vol
     vitesse_croisiere = 250.0;
-    vitesse_montee = 50.0;          // Montée plus rapide
-    vitesse_descente = 40.0;        // Descente plus rapide
+    vitesse_montee = 50.0;
+    vitesse_descente = 40.0;
     vitesse_roulage = 5.0;
 }
 
@@ -49,15 +68,37 @@ void Avion::demarrer() {
             update(dt);
         }
 
-        // Vérifier si le vol est terminé
-        if (volTermine()) {
-            enRoute = false;
-            break;
-        }
-
         // Petite pause pour ne pas surcharger le CPU (60 FPS)
             std::this_thread::sleep_for(std::chrono::milliseconds(16));
     }
+}
+
+void Avion::choisirNouvelleDestination() {
+    if (destinationsPossibles.empty()) {
+        std::cerr << "[" << nom << "] ERREUR: Aucune destination disponible\n";
+        return;
+    }
+
+    // Générateur aléatoire
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, destinationsPossibles.size() - 1);
+
+    // Choisir une destination différente de la position actuelle
+    Position nouvelleDestination;
+    int tentatives = 0;
+    do {
+        int index = dis(gen);
+        nouvelleDestination = destinationsPossibles[index];
+        tentatives++;
+    } while (position.distanceTo(nouvelleDestination) < 1000.0 && tentatives < 10);
+
+    destination = nouvelleDestination;
+    cap = calculerCap(destination);
+
+    std::cout << "[" << nom << "] Nouvelle destination choisie: "
+        << "(" << (int)(destination.x / 1000) << ", "
+        << (int)(destination.y / 1000) << ") km\n";
 }
 
 void Avion::update(double dt) {
@@ -101,22 +142,42 @@ void Avion::update(double dt) {
 }
 
 void Avion::updateParking(double dt) {
-    // Si c'est la première fois en parking, noter l'heure
-    static bool premiereEntreeParking = true;
-
-    if (premiereEntreeParking) {
+    if (!enParking) {
         tempsParkingDebut = std::chrono::steady_clock::now();
-        premiereEntreeParking = false;
-        std::cout << "[" << nom << "] Attente au parking pendant 5 secondes...\n";
+        enParking = true;
+
+        if (premierVol) {
+            tempsAttenteParking = 5;
+            premierVol = false;
+            // ❌ NE PAS APPELER choisirNouvelleDestination() ici
+            // La destination est déjà choisie dans le constructeur
+            std::cout << "[" << nom << "] Premier vol - Attente 5 secondes...\n";
+        }
+        else {
+            static std::random_device rd;
+            static std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis(10, 20);
+            tempsAttenteParking = dis(gen);
+            std::cout << "[" << nom << "] Attente " << tempsAttenteParking
+                << " secondes avant redecollage...\n";
+        }
     }
 
-    // Vérifier si 5 secondes se sont écoulées
     auto maintenant = std::chrono::steady_clock::now();
-    auto duree = std::chrono::duration_cast<std::chrono::seconds>(maintenant - tempsParkingDebut);
+    auto duree = std::chrono::duration_cast<std::chrono::seconds>(
+        maintenant - tempsParkingDebut);
 
-    if (duree.count() >= 5) {
+    if (duree.count() >= tempsAttenteParking) {
+        nombreVols++;
+
+        // ✅ Choisir nouvelle destination SEULEMENT pour les vols suivants
+        if (nombreVols > 1) {
+            choisirNouvelleDestination();
+        }
+
+        std::cout << "[" << nom << "] Decollage numero " << nombreVols << "\n";
         setEtat(EtatAvion::ROULAGE_DECOLLAGE);
-        premiereEntreeParking = true;  // Reset pour le prochain parking
+        enParking = false;
     }
 }
 
@@ -140,6 +201,7 @@ void Avion::updateDecollage(double dt) {
     if (vitesse < vitesse_croisiere) {
         vitesse += 10.0 * dt;
     }
+   
 
     position.altitude += vitesse_montee * 0.5 * dt;
 
@@ -155,6 +217,7 @@ void Avion::updateDecollage(double dt) {
 
 void Avion::updateMontee(double dt) {
     vitesse = vitesse_croisiere * 10.0;
+    
     position.altitude += vitesse_montee * 10.0 * dt;
 
     cap = calculerCap(destination);
@@ -171,7 +234,6 @@ void Avion::updateMontee(double dt) {
 
 void Avion::updateCroisiere(double dt) {
     vitesse = vitesse_croisiere * 50.0;
-
     cap = calculerCap(destination);
 
     double distance_parcourue = vitesse * dt;
@@ -180,18 +242,19 @@ void Avion::updateCroisiere(double dt) {
 
     double distance_restante = distanceVers(destination);
 
-    if (distance_restante < 5000.0) {
+    // ✅ VÉRIFIE LA DISTANCE AVANT DE PASSER EN PARKING
+    if (distance_restante < 5000.0) {  // 5 km
         vitesse = 0;
         position = destination;
         setEtat(EtatAvion::PARKING);
         return;
     }
 
-    if (distance_restante < 30000) {
+    // ✅ PASSE EN DESCENTE ASSEZ TÔT (100 km au lieu de 50 km)
+    if (distance_restante < 100000.0) {  // ← CHANGE 50000 en 100000
         setEtat(EtatAvion::DESCENTE);
     }
 }
-
 void Avion::updateDescente(double dt) {
     position.altitude -= vitesse_descente * dt;
     if (position.altitude < 0) position.altitude = 0;
@@ -207,7 +270,7 @@ void Avion::updateDescente(double dt) {
     position.y += distance_parcourue * sin(cap * M_PI / 180.0);
 
     if (position.altitude <= 500) {
-        setEtat(EtatAvion::APPROCHE);
+        setEtat(EtatAvion::APPROCHE);  
     }
 }
 

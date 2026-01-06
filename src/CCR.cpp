@@ -85,13 +85,12 @@ void CCR::creerVol(const std::string& nomAvion, const std::string& depart,
     Position posArrivee = itArrivee->second.position;
     posArrivee.altitude = altitudeCroisiere;
 
-    Avion* avion = new Avion(nomAvion, posDepart, posArrivee);
+    std::vector<Position> destinations = { posArrivee };  // Pour l'instant, une seule destination
+    Avion* avion = new Avion(nomAvion, posDepart, destinations);
 
     // Utiliser CROISIERE au lieu de EN_ROUTE qui n'existe pas dans l'enum
     avion->setEtat(EtatAvion::CROISIERE);
 
-    // ERREUR: setVitesse n'existe pas dans Avion
-    // avion->setVitesse(250.0); // 250 m/s ≈ 900 km/h
 
     ajouterAvion(avion);
 

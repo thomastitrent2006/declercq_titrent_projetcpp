@@ -8,6 +8,7 @@
 #include <thread>        
 #include <cmath>
 #include <iostream>
+#include <random>
 
 // Énumérations
 enum class EtatAvion {
@@ -52,9 +53,23 @@ private:
     std::chrono::steady_clock::time_point tempsParkingDebut;
     double tempsRoulageDebut;
 
+    static std::chrono::steady_clock::time_point tempsDebutSimulation;  
+    static bool simulationDemarree;
+
+
+    // NOUVEAUX MEMBRES pour destinations multiples et cycles
+    std::vector<Position> destinationsPossibles;  
+    Position positionDepart;  //  pour retenir le départ
+    int nombreVols;  //  compteur de vols effectués
+    bool premierVol;  // pour distinguer le premier vol
+
+    bool enParking;  
+    int tempsAttenteParking;
+
 public:
     // Constructeur
-    Avion(const std::string& nom, const Position& pos_depart, const Position& dest);
+    Avion(const std::string& nom, const Position& pos_depart,
+        const std::vector<Position>& destinations);
 
     // Getters
     std::string getNom() const { return nom; }
@@ -90,6 +105,13 @@ public:
 
     // Vérification fin de vol
     bool volTermine() const;
+
+    void choisirNouvelleDestination();
+
+    static void demarrerSimulation() {  
+        tempsDebutSimulation = std::chrono::steady_clock::now();
+        simulationDemarree = true;
+    }
 
 private:
     // Méthodes internes de gestion du vol

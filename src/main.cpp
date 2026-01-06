@@ -52,6 +52,39 @@ Vector2f worldToScreen(const Position& posAvion, const Position& depart, const P
     return Vector2f(screen_x, screen_y);
 }
 
+Vector2f worldToScreenDynamic(const Position& posAvion,
+    const std::vector<Vector2f>& screenAirports,
+    const std::vector<Position>& worldAirports) {
+
+    // Les coordonnées monde sont centrées sur (0, 0)
+    // La carte fait 1000 km de large et 950 km de haut
+
+    // Conversion : position monde (mètres) -> position écran (pixels)
+    // Monde : x ∈ [-500000, 500000] m, y ∈ [-475000, 475000] m
+    // Écran : x ∈ [0, 1200] px, y ∈ [0, 1104] px
+
+    const double MONDE_MIN_X = -500000.0;  // -500 km
+    const double MONDE_MAX_X = 500000.0;   // +500 km
+    const double MONDE_MIN_Y = -475000.0;  // -475 km
+    const double MONDE_MAX_Y = 475000.0;   // +475 km
+
+    // Normaliser la position entre 0 et 1
+    double normX = (posAvion.x - MONDE_MIN_X) / (MONDE_MAX_X - MONDE_MIN_X);
+    double normY = (posAvion.y - MONDE_MIN_Y) / (MONDE_MAX_Y - MONDE_MIN_Y);
+
+    // Convertir en pixels
+    float screen_x = normX * WINDOW_SIZE_X;
+    float screen_y = normY * WINDOW_SIZE_Y;
+
+    // Debug toutes les 180 frames (3 secondes à 60 FPS)
+    static int frameCount = 0;
+    if (frameCount++ % 180 == 0) {
+       
+    }
+
+    return Vector2f(screen_x, screen_y);
+}
+
 void initializeSimulation() {
     RenderWindow window(VideoMode({ WINDOW_SIZE_X, WINDOW_SIZE_Y }), "Air Traffic Control");
     window.setFramerateLimit(60);
@@ -117,17 +150,23 @@ void initializeSimulation() {
     ccr->ajouterRoute("Toulouse", "Lille");
 
     // ========== CRÉER LES AVIONS ==========
-
+    std::vector<Position> toutesDestinations = { posLille, posNantes, posToulouse };
     // Avion 1: Lille -> Nantes
-    Avion* p1 = new Avion("AF123", posLille, posNantes);
+    Avion* p1 = new Avion("AF123", posLille, toutesDestinations);
     planes.push_back(p1);
     ccr->ajouterAvion(p1);
 
-     // Avion 2: Toulouse -> Lille (optionnel)
-     Avion* p2 = new Avion("LH456", posToulouse, posLille);
-     planes.push_back(p2);
-     ccr->ajouterAvion(p2);
+    // Avion 2: LH456 - peut aller à n'importe quel aéroport  
+    Avion* p2 = new Avion("LH456", posToulouse, toutesDestinations);
+    planes.push_back(p2);
+    ccr->ajouterAvion(p2);
 
+    // Avion 3: BA789 - peut aller à n'importe quel aéroport
+    Avion* p3 = new Avion("BA789", posNantes, toutesDestinations);
+    planes.push_back(p3);
+    ccr->ajouterAvion(p3);
+
+    Avion::demarrerSimulation();
     // ========== DÉMARRER LES AVIONS DANS DES THREADS ==========
     for (auto* plane : planes) {
         planeThreads.emplace_back([plane]() {
@@ -282,22 +321,14 @@ void initializeSimulation() {
 
         // ========== METTRE À JOUR LES POSITIONS DES SPRITES D'AVIONS ==========
         // Boucler sur tous les avions
+        std::vector<Vector2f> screenAirports = { screenLille, screenNantes, screenToulouse };
+        std::vector<Position> worldAirports = { posLille, posNantes, posToulouse };
+
+        // Mettre à jour tous les avions dynamiquement
         for (size_t i = 0; i < planes.size(); i++) {
             Position posAvion = planes[i]->getPosition();
-
-            // Pour l'avion Lille->Nantes (AF123)
-            if (i == 0) {
-                Vector2f screenPos = worldToScreen(posAvion, posLille, posNantes,
-                    screenLille, screenNantes);
-                planeSprites[i].setPosition(screenPos);
-            }
-            // Pour un éventuel deuxième avion Toulouse->Lille
-            else if (i == 1) {
-                Vector2f screenPos = worldToScreen(posAvion, posToulouse, posLille,
-                    screenToulouse, screenLille);
-                planeSprites[i].setPosition(screenPos);
-            }
-            // Ajouter d'autres conditions pour plus d'avions...
+            Vector2f screenPos = worldToScreenDynamic(posAvion, screenAirports, worldAirports);
+            planeSprites[i].setPosition(screenPos);
         }
 
         // ========== RENDU ==========

@@ -23,8 +23,6 @@ const int WINDOW_SIZE_Y = 1104;
 #define M_PI 3.14159265358979323846
 #endif
 
-// Calculer l'angle de rotation pour que l'image d'avion aille dans la bonne direction
-
 float calculerAngleRotation(const Position& posAvion, const Position& destination) {
     double dx = destination.x - posAvion.x;
     double dy = destination.y - posAvion.y;
@@ -33,7 +31,6 @@ float calculerAngleRotation(const Position& posAvion, const Position& destinatio
     return static_cast<float>(angleDegres);
 }
 
-// Fonction pour convertir les coordonnées écran en coordonnées monde
 Position screenToWorld(const sf::Vector2f& screenPos, int windowWidth, int windowHeight) {
     const double CARTE_LARGEUR_KM = 1000.0;
     const double CARTE_HAUTEUR_KM = 950.0;
@@ -47,40 +44,18 @@ Position screenToWorld(const sf::Vector2f& screenPos, int windowWidth, int windo
     return Position(worldX, worldY, 0.0);
 }
 
-Vector2f worldToScreen(const Position& posAvion, const Position& depart, const Position& arrivee,
-    const Vector2f& screenStart, const Vector2f& screenEnd) {
-    double total_dx = arrivee.x - depart.x;
-    double total_dy = arrivee.y - depart.y;
-
-    double current_dx = posAvion.x - depart.x;
-    double current_dy = posAvion.y - depart.y;
-
-    if (total_dx == 0) total_dx = 1;
-    if (total_dy == 0) total_dy = 1;
-
-    double ratio_x = current_dx / total_dx;
-    double ratio_y = current_dy / total_dy;
-
-    float screen_x = screenStart.x + ratio_x * (screenEnd.x - screenStart.x);
-    float screen_y = screenStart.y + ratio_y * (screenEnd.y - screenStart.y);
-
-    return Vector2f(screen_x, screen_y);
-}
-
 Vector2f worldToScreenDynamic(const Position& posAvion,
     const std::vector<Vector2f>& screenAirports,
     const std::vector<Position>& worldAirports) {
 
-    const double MONDE_MIN_X = -500000.0;  // -500 km
-    const double MONDE_MAX_X = 500000.0;   // +500 km
-    const double MONDE_MIN_Y = -475000.0;  // -475 km
-    const double MONDE_MAX_Y = 475000.0;   // +475 km
+    const double MONDE_MIN_X = -500000.0;
+    const double MONDE_MAX_X = 500000.0;
+    const double MONDE_MIN_Y = -475000.0;
+    const double MONDE_MAX_Y = 475000.0;
 
-    // Normaliser la position entre 0 et 1
     double normX = (posAvion.x - MONDE_MIN_X) / (MONDE_MAX_X - MONDE_MIN_X);
     double normY = (posAvion.y - MONDE_MIN_Y) / (MONDE_MAX_Y - MONDE_MIN_Y);
 
-    // Convertir en pixels
     float screen_x = normX * WINDOW_SIZE_X;
     float screen_y = normY * WINDOW_SIZE_Y;
 
@@ -88,7 +63,7 @@ Vector2f worldToScreenDynamic(const Position& posAvion,
 }
 
 void initializeSimulation() {
-    RenderWindow window(VideoMode({ WINDOW_SIZE_X, WINDOW_SIZE_Y }), "Air Traffic Control");
+    RenderWindow window(VideoMode({ WINDOW_SIZE_X, WINDOW_SIZE_Y }), "Air Traffic Control - Rotation d'attente");
     window.setFramerateLimit(60);
 
     std::vector<Avion*> planes;
@@ -100,29 +75,29 @@ void initializeSimulation() {
     Vector2f screenNantes(280, 450);
     Vector2f screenToulouse(470, 780);
 
-    // Convertir en coordonnées monde
     Position posLille = screenToWorld(screenLille, WINDOW_SIZE_X, WINDOW_SIZE_Y);
     Position posNantes = screenToWorld(screenNantes, WINDOW_SIZE_X, WINDOW_SIZE_Y);
     Position posToulouse = screenToWorld(screenToulouse, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 
-    // Altitude de croisière
     posLille.altitude = 10000.0;
     posNantes.altitude = 10000.0;
     posToulouse.altitude = 10000.0;
 
     CCR* ccr = new CCR("CCR_France", 10000.0);
 
-    // Lille
+   
+
+    // Lille 
     TWR* twrLille = new TWR("TWR_Lille");
-    twrLille->initialiserParkings(10);
+    twrLille->initialiserParkings(1);  
     towers.push_back(twrLille);
 
     APP* appLille = new APP("APP_Lille", posLille, 50000.0, twrLille, ccr);
     airports.push_back(appLille);
 
-    // Nantes
+    // Nantes 
     TWR* twrNantes = new TWR("TWR_Nantes");
-    twrNantes->initialiserParkings(10);
+    twrNantes->initialiserParkings(1);  
     towers.push_back(twrNantes);
 
     APP* appNantes = new APP("APP_Nantes", posNantes, 50000.0, twrNantes, ccr);
@@ -130,15 +105,15 @@ void initializeSimulation() {
 
     // Toulouse
     TWR* twrToulouse = new TWR("TWR_Toulouse");
-    twrToulouse->initialiserParkings(10);
+    twrToulouse->initialiserParkings(1);  
     towers.push_back(twrToulouse);
 
     APP* appToulouse = new APP("APP_Toulouse", posToulouse, 50000.0, twrToulouse, ccr);
     airports.push_back(appToulouse);
 
-    ccr->ajouterAeroport("Lille", posLille, appLille, 5);
-    ccr->ajouterAeroport("Nantes", posNantes, appNantes, 5);
-    ccr->ajouterAeroport("Toulouse", posToulouse, appToulouse, 5);
+    ccr->ajouterAeroport("Lille", posLille, appLille, 1);
+    ccr->ajouterAeroport("Nantes", posNantes, appNantes, 1);
+    ccr->ajouterAeroport("Toulouse", posToulouse, appToulouse, 1);
 
     ccr->ajouterRoute("Lille", "Nantes");
     ccr->ajouterRoute("Nantes", "Toulouse");
@@ -146,6 +121,7 @@ void initializeSimulation() {
 
     std::vector<Position> toutesDestinations = { posLille, posNantes, posToulouse };
 
+    // CRÉER PLUSIEURS AVIONS 
     Avion* p1 = new Avion("AF123", posLille, toutesDestinations);
     planes.push_back(p1);
     ccr->ajouterAvion(p1);
@@ -158,9 +134,16 @@ void initializeSimulation() {
     planes.push_back(p3);
     ccr->ajouterAvion(p3);
 
-    Avion::demarrerSimulation();
 
-    std::cout << "\n=== DEMARRAGE DE LA SIMULATION ===\n";
+    Avion* p4 = new Avion("EZ321", posLille, toutesDestinations);
+    planes.push_back(p4);
+    ccr->ajouterAvion(p4);
+
+    Avion* p5 = new Avion("RY654", posNantes, toutesDestinations);
+    planes.push_back(p5);
+    ccr->ajouterAvion(p5);
+
+    Avion::demarrerSimulation();
 
     for (auto* plane : planes) {
         if (plane != nullptr) {
@@ -172,23 +155,20 @@ void initializeSimulation() {
                     std::cerr << "Erreur avion " << plane->getNom() << ": " << e.what() << "\n";
                 }
                 });
-            std::cout << " Avion " << plane->getNom() << " demarre\n";
+            std::cout << "  Avion " << plane->getNom() << " demarre\n";
         }
     }
 
-    std::cout << "\n--- Test CCR ---\n";
     try {
         ccr->demarrer();
-        std::cout << " CCR demarre avec succes\n";
+        std::cout << " CCR demarre\n";
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     catch (const std::exception& e) {
         std::cerr << " ERREUR CCR: " << e.what() << "\n";
-        std::cerr << "   → Arret de la simulation\n";
         return;
     }
 
-    std::cout << "\n--- Test APP ---\n";
     for (size_t i = 0; i < airports.size(); i++) {
         try {
             airports[i]->demarrer();
@@ -200,7 +180,6 @@ void initializeSimulation() {
         }
     }
 
-    std::cout << "\n--- Test TWR ---\n";
     for (size_t i = 0; i < towers.size(); i++) {
         try {
             towers[i]->demarrer();
@@ -212,12 +191,10 @@ void initializeSimulation() {
         }
     }
 
-    std::cout << "=== SIMULATION DEMARREE ===\n";
-    std::cout << "Avions crees: " << planes.size() << "\n";
-    std::cout << "Aeroports: " << airports.size() << "\n";
-    std::cout << "Tours: " << towers.size() << "\n\n";
+    std::cout << "\n=== SIMULATION DEMARREE ===\n";
+    std::cout << "Avions: " << planes.size() << " | Aéroports: " << airports.size() << "\n\n";
 
-    // Carte
+    // Chargement des textures
     Texture backgroundImage;
     if (!backgroundImage.loadFromFile(std::string(_PATHIMG) + "france.png")) {
         std::cerr << "Erreur chargement carte" << std::endl;
@@ -225,7 +202,6 @@ void initializeSimulation() {
     }
     Sprite backgroundSprite(backgroundImage);
 
-    // Aéroports
     Texture aeroportImage;
     if (!aeroportImage.loadFromFile(std::string(_PATHIMG) + "airport.png")) {
         std::cerr << "Erreur chargement airport" << std::endl;
@@ -249,22 +225,18 @@ void initializeSimulation() {
     airport3.setPosition(screenToulouse);
     airportSprites.push_back(airport3);
 
-    // Avion
     Texture airplane;
     if (!airplane.loadFromFile(std::string(_PATHIMG) + "airplane.png")) {
         std::cerr << "Erreur chargement avion" << std::endl;
         return;
     }
 
-    //  Créer sprites avec origine centrée ⭐
     std::vector<Sprite> planeSprites;
     for (size_t i = 0; i < planes.size(); i++) {
         Sprite planeSprite(airplane);
         planeSprite.scale({ 0.15f, 0.15f });
 
- 
         FloatRect bounds = planeSprite.getLocalBounds();
-        // bounds.size est un Vector2f, on peut l'utiliser directement
         planeSprite.setOrigin(bounds.size / 2.0f);
 
         planeSprites.push_back(planeSprite);
@@ -272,7 +244,6 @@ void initializeSimulation() {
 
     Clock clock;
 
-    // Préparer les vecteurs pour la boucle 
     std::vector<Vector2f> screenAirports = { screenLille, screenNantes, screenToulouse };
     std::vector<Position> worldAirports = { posLille, posNantes, posToulouse };
 
@@ -305,27 +276,21 @@ void initializeSimulation() {
 
         float deltaTime = clock.restart().asSeconds();
 
-        // ⭐ MISE À JOUR AVEC ROTATION (SFML 3) - SÉCURISÉE ⭐
         for (size_t i = 0; i < planes.size() && i < planeSprites.size(); i++) {
             if (planes[i] != nullptr) {
                 try {
                     Position posAvion = planes[i]->getPosition();
                     Position destination = planes[i]->getDestination();
 
-                    // Calculer position écran
                     Vector2f screenPos = worldToScreenDynamic(posAvion, screenAirports, worldAirports);
                     planeSprites[i].setPosition(screenPos);
 
-                    // Calculer et appliquer la rotation
                     float angleDegres = calculerAngleRotation(posAvion, destination);
-
-                    
                     planeSprites[i].setRotation(sf::degrees(angleDegres));
 
-                    
                     EtatAvion etat = planes[i]->getEtat();
                     if (etat == EtatAvion::PARKING) {
-                        planeSprites[i].setColor(Color(150, 150, 150)); // Gris
+                        planeSprites[i].setColor(Color(150, 150, 150));
                     }
                     else if (etat == EtatAvion::CROISIERE) {
                         planeSprites[i].setColor(Color::White);
@@ -341,7 +306,7 @@ void initializeSimulation() {
                     }
                 }
                 catch (const std::exception& e) {
-                    std::cerr << "Erreur mise à jour sprite avion " << i << ": " << e.what() << "\n";
+                    std::cerr << "Erreur sprite avion " << i << ": " << e.what() << "\n";
                 }
             }
         }
@@ -360,19 +325,16 @@ void initializeSimulation() {
         window.display();
     }
 
-    // Arrêter les avions
     for (auto* plane : planes) {
         plane->arreter();
     }
 
-    // Attendre les threads
     for (auto& thread : planeThreads) {
         if (thread.joinable()) {
             thread.join();
         }
     }
 
-    // Libérer la mémoire
     for (auto* plane : planes) {
         delete plane;
     }

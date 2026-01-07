@@ -65,7 +65,7 @@ void Avion::demarrer() {
 
         // Mettre à jour l'avion
         if (dt > 0.0 && dt < 1.0) {  // Limiter dt pour éviter les sauts
-            update(dt);
+            update(dt*3.0);
         }
 
         // Petite pause pour ne pas surcharger le CPU (60 FPS)

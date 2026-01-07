@@ -34,6 +34,7 @@ void APP::processLogic() {
 
     gererNouvellesArrivees();
     gererTrajectoires();
+    gererDeparts();
 }
 
 bool APP::estDansZone(const Avion& avion) const {
@@ -76,8 +77,8 @@ void APP::retirerAvionEnApproche(Avion* avion) {
 
 void APP::gererNouvellesArrivees() {
     for (auto* avion : avionsSousControle) {
-        if (avion->getEtat() == EtatAvion::CROISIERE ||
-            avion->getEtat() == EtatAvion::DESCENTE) {
+   
+        if (avion->getEtat() == EtatAvion::DESCENTE) {  
             Position pos = avion->getPosition();
 
             if (estDansZone(pos)) {
@@ -149,6 +150,36 @@ void APP::assignerTrajectoireCirculaire(Avion* avion, int niveau) {
         std::to_string(static_cast<int>(altitude)) + "m");
 }
 
+void APP::gererDeparts() {
+    std::vector<Avion*> avionsARetirer;
+
+    for (auto* avion : avionsSousControle) {
+        if (avion == nullptr) continue;
+
+        EtatAvion etat = avion->getEtat();
+        Position pos = avion->getPosition();
+        double distance = pos.distanceTo(centreAeroport);
+
+       
+        if (etat == EtatAvion::MONTEE && pos.altitude > 3000.0) {
+            avionsARetirer.push_back(avion);
+        }
+
+        
+        if (etat == EtatAvion::CROISIERE && distance > 55000.0) {
+            avionsARetirer.push_back(avion);
+        }
+    }
+
+    // Retirer les avions de la liste
+    for (auto* avion : avionsARetirer) {
+        auto it = std::find(avionsSousControle.begin(), avionsSousControle.end(), avion);
+        if (it != avionsSousControle.end()) {
+            avionsSousControle.erase(it);
+        }
+    }
+}
+
 APP* APP::demanderNouvelAPP() {
     if (ccrReference != nullptr) {
         logAction("DEMANDE_NOUVEL_APP",
@@ -194,4 +225,24 @@ void APP::afficherConsole() const {
         }
     }
     std::cout << "=====================================\n";
+}
+
+void APP::transfererAvionVersCCR(Avion* avion) {
+    if (avion == nullptr || ccrReference == nullptr) {
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(mtx);
+
+    // Vérifier que l'avion est bien en dehors de notre zone
+    if (!estDansZone(avion->getPosition())) {
+        logAction("TRANSFERT_CCR",
+            "Avion " + avion->getNom() + " transféré au CCR");
+
+        // Notifier le CCR
+        ccrReference->recevoirAvionDepuisAPP(avion, nom);
+
+        // Retirer l'avion de notre contrôle
+        retirerAvion(avion->getNom());
+    }
 }

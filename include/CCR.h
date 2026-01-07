@@ -54,6 +54,10 @@ public:
 
     // Vérifier les risques de collision
     std::vector<std::pair<std::string, std::string>> detecterRisquesCollision() const;
+
+    void recupererAvionsEnCroisiere();
+
+    void recevoirAvionDepuisAPP(Avion* avion, const std::string& aeroportDepart);
 };
 
 #endif // CCR_H

@@ -22,6 +22,8 @@ private:
     TWR* towerReference;
     CCR* ccrReference;
 
+    void gererDeparts();  
+
 public:
     // Constructeur
     APP(const std::string& nom, const Position& centre, float rayon,
@@ -48,6 +50,7 @@ public:
     // Gestion des avions
     void ajouterAvionEnApproche(Avion* avion);
     void retirerAvionEnApproche(Avion* avion);
+    void transfererAvionVersCCR(Avion* avion);
 
     // Logique de contrôle
     void gererNouvellesArrivees();

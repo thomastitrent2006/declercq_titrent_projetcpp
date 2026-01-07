@@ -79,6 +79,7 @@ void initializeSimulation() {
     Position posNantes = screenToWorld(screenNantes, WINDOW_SIZE_X, WINDOW_SIZE_Y);
     Position posToulouse = screenToWorld(screenToulouse, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 
+    // Altitude de croisière
     posLille.altitude = 10000.0;
     posNantes.altitude = 10000.0;
     posToulouse.altitude = 10000.0;

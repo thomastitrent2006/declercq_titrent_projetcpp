@@ -76,8 +76,9 @@ public:
     Position getPosition() const { return position; }
     double getVitesse() const { return vitesse; }
     double getAltitude() const { return position.altitude; }
-    EtatAvion getEtat() const { return etat; }  // ← GARDE UNE SEULE FOIS
+    EtatAvion getEtat() const { return etat; }  
     Position getDestination() const { return destination; }
+    double getCap() const { return cap; }
 
     // Setters
     void setEtat(EtatAvion nouvelEtat) {

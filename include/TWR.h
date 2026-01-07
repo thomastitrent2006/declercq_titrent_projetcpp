@@ -33,6 +33,7 @@ private:
     void gererRoulage();
     bool pisteLibreInternal() const;
     std::string assignerParking();
+    bool pisteOccupee;
 
 public:
     TWR(const std::string& nom);
@@ -50,6 +51,12 @@ public:
     // Gestion des parkings
     std::string getParkingDisponible() const;
     void libererParking(const std::string& parkingId);
+
+    bool isPisteOccupee() const {
+        return pisteOccupee;  // Variable membre existante
+    }
+    void occuperPiste() { pisteOccupee = true; }
+    void libererPiste() { pisteOccupee = false; }
 };
 
 #endif // TWR_H

@@ -19,6 +19,7 @@ enum class EtatAvion {
     CROISIERE,
     DESCENTE,
     APPROCHE,
+    ATTENTE,           
     ATTERRISSAGE,
     ROULAGE_ARRIVEE
 };
@@ -65,6 +66,39 @@ private:
 
     bool enParking;  
     int tempsAttenteParking;
+    double angle_attente = 0.0;       
+    Position centre_attente;           
+    double rayon_attente = 15000.0;
+
+    // Méthodes internes de gestion du vol
+    void updateParking(double dt);
+    void updateRoulageDecollage(double dt);
+    void updateDecollage(double dt);
+    void updateMontee(double dt);
+    void updateCroisiere(double dt);
+    void updateDescente(double dt);
+    void updateApproche(double dt);
+    void updateAtterrissage(double dt);
+    void updateRoulageArrivee(double dt);
+
+    // Utilitaires
+    double distanceVers(const Position& pos) const;
+    double calculerCap(const Position& cible) const;
+
+    std::string getEtatStringFromEnum(EtatAvion e) const {
+        switch (e) {
+        case EtatAvion::PARKING: return "PARKING";
+        case EtatAvion::ROULAGE_DECOLLAGE: return "ROULAGE_DECOLLAGE";
+        case EtatAvion::DECOLLAGE: return "DECOLLAGE";
+        case EtatAvion::MONTEE: return "MONTEE";
+        case EtatAvion::CROISIERE: return "CROISIERE";
+        case EtatAvion::DESCENTE: return "DESCENTE";
+        case EtatAvion::APPROCHE: return "APPROCHE";
+        case EtatAvion::ATTERRISSAGE: return "ATTERRISSAGE";
+        case EtatAvion::ROULAGE_ARRIVEE: return "ROULAGE_ARRIVEE";
+        default: return "INCONNU";
+        }
+    }
 
 public:
     // Constructeur
@@ -114,36 +148,17 @@ public:
         simulationDemarree = true;
     }
 
-private:
-    // Méthodes internes de gestion du vol
-    void updateParking(double dt);
-    void updateRoulageDecollage(double dt);
-    void updateDecollage(double dt);
-    void updateMontee(double dt);
-    void updateCroisiere(double dt);
-    void updateDescente(double dt);
-    void updateApproche(double dt);
-    void updateAtterrissage(double dt);
-    void updateRoulageArrivee(double dt);
+    void updateAttente(double dt);
 
-    // Utilitaires
-    double distanceVers(const Position& pos) const;
-    double calculerCap(const Position& cible) const;
+    void setCentreAttente(const Position& centre) {
+        centre_attente = centre;
 
-    std::string getEtatStringFromEnum(EtatAvion e) const {
-        switch (e) {
-        case EtatAvion::PARKING: return "PARKING";
-        case EtatAvion::ROULAGE_DECOLLAGE: return "ROULAGE_DECOLLAGE";
-        case EtatAvion::DECOLLAGE: return "DECOLLAGE";
-        case EtatAvion::MONTEE: return "MONTEE";
-        case EtatAvion::CROISIERE: return "CROISIERE";
-        case EtatAvion::DESCENTE: return "DESCENTE";
-        case EtatAvion::APPROCHE: return "APPROCHE";
-        case EtatAvion::ATTERRISSAGE: return "ATTERRISSAGE";
-        case EtatAvion::ROULAGE_ARRIVEE: return "ROULAGE_ARRIVEE";
-        default: return "INCONNU";
-        }
+        // Calculer l'angle initial basé sur la position actuelle
+        double dx = position.x - centre.x;
+        double dy = position.y - centre.y;
+        angle_attente = atan2(dy, dx);
     }
+    
 };
 
 #endif // AVION_H

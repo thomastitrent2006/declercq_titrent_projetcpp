@@ -5,7 +5,7 @@
 TWR::TWR(const std::string& nom) : ControleurBase(nom) {
     piste.occupee = false;
     piste.avionActuel = "";
-    initialiserParkings(10);
+    initialiserParkings(1);
 }
 
 void TWR::initialiserParkings(int nombre) {
@@ -79,16 +79,30 @@ void TWR::libererParking(const std::string& parkingId) {
     }
 }
 void TWR::processLogic() {
-    static int compteur = 0;
-    if (compteur++ % 50 == 0) {  // Toutes les 5 secondes
-        if (!avionsSousControle.empty() || piste.occupee) {
-            std::cout << "[TWR " << nom << "] ";
-            if (piste.occupee) {
-                std::cout << "Piste occupee [" << piste.avionActuel << "] | ";
-            }
-            std::cout << avionsSousControle.size() << " avions sous controle\n";
+    std::lock_guard<std::mutex> lock(mtx);
+
+    
+    if (!avionsSousControle.empty()) {
+        
+        piste.occupee = true;
+
+        
+        if (avionsSousControle.front() != nullptr) {
+            piste.avionActuel = avionsSousControle.front()->getNom();
         }
     }
+    else {
+        // Piste libre
+        piste.occupee = false;
+        piste.avionActuel = "";
+    }
+
+    // Log existant
+    if (piste.occupee) {
+        std::cout << "[TWR " << nom << "] Piste occupee [" << piste.avionActuel
+            << "] | " << avionsSousControle.size() << " avions sous controle\n";
+    }
+
 
     gererAtterrissages();
     gererRoulage();
@@ -96,7 +110,7 @@ void TWR::processLogic() {
 }
 
 void TWR::gererAtterrissages() {
-    std::lock_guard<std::mutex> lock(mtx);
+    
 
     if (piste.occupee) {
         auto now = std::chrono::steady_clock::now();
@@ -125,7 +139,7 @@ void TWR::gererAtterrissages() {
 }
 
 void TWR::gererRoulage() {
-    std::lock_guard<std::mutex> lock(mtx);
+    
 
     for (auto* avion : avionsSousControle) {
         if (avion->getEtat() == EtatAvion::ROULAGE_ARRIVEE) {
@@ -136,7 +150,7 @@ void TWR::gererRoulage() {
 }
 
 void TWR::gererDecollages() {
-    std::lock_guard<std::mutex> lock(mtx);
+    
 
     if (!piste.occupee && !avionsSousControle.empty()) {
         Avion* avionPrioritaire = nullptr;

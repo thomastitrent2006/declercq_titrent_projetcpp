@@ -13,10 +13,8 @@ using namespace sf;
 const int WINDOW_SIZE_X = 1200;
 const int WINDOW_SIZE_Y = 1104;
 
-#ifdef _MSC_VER
-#define _PATHIMG "C:/SFML_3.0.2/img/"
-#else
-#define _PATHIMG "./img/"
+#ifndef PATH_IMG
+#define PATH_IMG "img/"  // Fallback si PATH_IMG n'est pas défini
 #endif
 
 #ifndef M_PI
@@ -74,15 +72,19 @@ void initializeSimulation() {
     Vector2f screenLille(600, 80);
     Vector2f screenNantes(280, 450);
     Vector2f screenToulouse(470, 780);
+    Vector2f screenLyon(700, 550);
 
     Position posLille = screenToWorld(screenLille, WINDOW_SIZE_X, WINDOW_SIZE_Y);
     Position posNantes = screenToWorld(screenNantes, WINDOW_SIZE_X, WINDOW_SIZE_Y);
     Position posToulouse = screenToWorld(screenToulouse, WINDOW_SIZE_X, WINDOW_SIZE_Y);
+    Position posLyon = screenToWorld(screenLyon, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 
     // Altitude de croisière
+
     posLille.altitude = 10000.0;
     posNantes.altitude = 10000.0;
     posToulouse.altitude = 10000.0;
+    posLyon.altitude = 10000.0;
 
     CCR* ccr = new CCR("CCR_France", 10000.0);
 
@@ -112,15 +114,27 @@ void initializeSimulation() {
     APP* appToulouse = new APP("APP_Toulouse", posToulouse, 50000.0, twrToulouse, ccr);
     airports.push_back(appToulouse);
 
+    TWR* twrLyon = new TWR("TWR_Lyon");
+    twrLyon->initialiserParkings(1);
+    towers.push_back(twrLyon);
+    APP* appLyon = new APP("APP_Lyon", posLyon, 50000.0, twrLyon, ccr);
+    airports.push_back(appLyon);
+
     ccr->ajouterAeroport("Lille", posLille, appLille, 1);
     ccr->ajouterAeroport("Nantes", posNantes, appNantes, 1);
     ccr->ajouterAeroport("Toulouse", posToulouse, appToulouse, 1);
+    ccr->ajouterAeroport("Lyon", posLyon, appLyon, 1);
 
     ccr->ajouterRoute("Lille", "Nantes");
     ccr->ajouterRoute("Nantes", "Toulouse");
     ccr->ajouterRoute("Toulouse", "Lille");
+    ccr->ajouterRoute("Lille", "Lyon");
+    ccr->ajouterRoute("Lyon", "Toulouse");
+    ccr->ajouterRoute("Lyon", "Nantes");
+    ccr->ajouterRoute("Nantes", "Lyon");
+    ccr->ajouterRoute("Toulouse", "Lyon");
 
-    std::vector<Position> toutesDestinations = { posLille, posNantes, posToulouse };
+    std::vector<Position> toutesDestinations = { posLille, posNantes, posToulouse, posLyon };
 
     // CRÉER PLUSIEURS AVIONS 
     Avion* p1 = new Avion("AF123", posLille, toutesDestinations);
@@ -136,7 +150,7 @@ void initializeSimulation() {
     ccr->ajouterAvion(p3);
 
 
-    Avion* p4 = new Avion("EZ321", posLille, toutesDestinations);
+    Avion* p4 = new Avion("EZ321", posLyon, toutesDestinations);
     planes.push_back(p4);
     ccr->ajouterAvion(p4);
 
@@ -193,18 +207,18 @@ void initializeSimulation() {
     }
 
     std::cout << "\n=== SIMULATION DEMARREE ===\n";
-    std::cout << "Avions: " << planes.size() << " | Aéroports: " << airports.size() << "\n\n";
+    std::cout << "Avions: " << planes.size() << " | Aéroports: 4" << airports.size() << "\n\n";
 
     // Chargement des textures
     Texture backgroundImage;
-    if (!backgroundImage.loadFromFile(std::string(_PATHIMG) + "france.png")) {
+    if (!backgroundImage.loadFromFile(std::string(PATH_IMG) + "france.png")) {
         std::cerr << "Erreur chargement carte" << std::endl;
         return;
     }
     Sprite backgroundSprite(backgroundImage);
 
     Texture aeroportImage;
-    if (!aeroportImage.loadFromFile(std::string(_PATHIMG) + "airport.png")) {
+    if (!aeroportImage.loadFromFile(std::string(PATH_IMG) + "airport.png")) {
         std::cerr << "Erreur chargement airport" << std::endl;
         return;
     }
@@ -226,15 +240,36 @@ void initializeSimulation() {
     airport3.setPosition(screenToulouse);
     airportSprites.push_back(airport3);
 
-    Texture airplane;
-    if (!airplane.loadFromFile(std::string(_PATHIMG) + "airplane.png")) {
-        std::cerr << "Erreur chargement avion" << std::endl;
+    Sprite airport4(aeroportImage);
+    airport4.scale({ 0.2f, 0.2f });
+    airport4.setPosition(screenLyon);
+    airportSprites.push_back(airport4);
+
+    Texture airplane, airplaneVert, airplaneJaune, airplaneCyan;
+
+    if (!airplane.loadFromFile(std::string(PATH_IMG) + "airplane.png")) {
+        std::cerr << "Erreur chargement avion blanc" << std::endl;
+        return;
+    }
+
+    if (!airplaneVert.loadFromFile(std::string(PATH_IMG) + "avionvert.png")) {
+        std::cerr << "Erreur chargement avion vert" << std::endl;
+        return;
+    }
+
+    if (!airplaneJaune.loadFromFile(std::string(PATH_IMG) + "avionjaune.png")) {
+        std::cerr << "Erreur chargement avion jaune" << std::endl;
+        return;
+    }
+
+    if (!airplaneCyan.loadFromFile(std::string(PATH_IMG) + "avioncyan.png")) {
+        std::cerr << "Erreur chargement avion cyan" << std::endl;
         return;
     }
 
     std::vector<Sprite> planeSprites;
     for (size_t i = 0; i < planes.size(); i++) {
-        Sprite planeSprite(airplane);
+        Sprite planeSprite(airplane);  
         planeSprite.scale({ 0.15f, 0.15f });
 
         FloatRect bounds = planeSprite.getLocalBounds();
@@ -245,8 +280,8 @@ void initializeSimulation() {
 
     Clock clock;
 
-    std::vector<Vector2f> screenAirports = { screenLille, screenNantes, screenToulouse };
-    std::vector<Position> worldAirports = { posLille, posNantes, posToulouse };
+    std::vector<Vector2f> screenAirports = { screenLille, screenNantes, screenToulouse, screenLyon };
+    std::vector<Position> worldAirports = { posLille, posNantes, posToulouse, posLyon };
 
     while (window.isOpen()) {
         while (const std::optional<Event> event = window.pollEvent()) {
@@ -280,6 +315,14 @@ void initializeSimulation() {
         for (size_t i = 0; i < planes.size() && i < planeSprites.size(); i++) {
             if (planes[i] != nullptr) {
                 try {
+                    EtatAvion etat = planes[i]->getEtat();
+
+                    // ✅ SI EN PARKING, NE PAS DESSINER
+                    if (etat == EtatAvion::PARKING) {
+                        planeSprites[i].setColor(Color(255, 255, 255, 0));  // Invisible
+                        continue;  // Passer au prochain avion
+                    }
+
                     Position posAvion = planes[i]->getPosition();
                     Position destination = planes[i]->getDestination();
 
@@ -289,28 +332,33 @@ void initializeSimulation() {
                     float angleDegres = calculerAngleRotation(posAvion, destination);
                     planeSprites[i].setRotation(sf::degrees(angleDegres));
 
-                    EtatAvion etat = planes[i]->getEtat();
-                    if (etat == EtatAvion::PARKING) {
-                        planeSprites[i].setColor(Color(150, 150, 150));
+                    if (etat == EtatAvion::CROISIERE) {
+                        planeSprites[i].setTexture(airplane);
                     }
-                    else if (etat == EtatAvion::CROISIERE) {
-                        planeSprites[i].setColor(Color::White);
-                    }
-                    else if (etat == EtatAvion::DESCENTE || etat == EtatAvion::APPROCHE) {
-                        planeSprites[i].setColor(Color::Yellow);
+                    else if (etat == EtatAvion::DESCENTE || etat == EtatAvion::APPROCHE  ) {
+                        planeSprites[i].setTexture(airplaneJaune);
                     }
                     else if (etat == EtatAvion::MONTEE || etat == EtatAvion::DECOLLAGE) {
-                        planeSprites[i].setColor(Color::Green);
+                        planeSprites[i].setTexture(airplaneVert);
                     }
-                    else {
-                        planeSprites[i].setColor(Color::Cyan);
+                    else if (etat == EtatAvion::ROULAGE_DECOLLAGE || etat == EtatAvion::ATTERRISSAGE) {
+                        planeSprites[i].setTexture(airplaneCyan);
                     }
+
+                    // ✅ Recentrer l'origine après changement de texture
+                    FloatRect bounds = planeSprites[i].getLocalBounds();
+                    planeSprites[i].setOrigin(bounds.size / 2.0f);
+
+                    // ✅ Rendre visible
+                    planeSprites[i].setColor(Color::White);
                 }
                 catch (const std::exception& e) {
-                    std::cerr << "Erreur sprite avion " << i << ": " << e.what() << "\n";
+                    std::cerr << "Erreur mise à jour sprite avion " << i << ": " << e.what() << "\n";
                 }
             }
         }
+            
+
 
         window.clear(Color::Black);
         window.draw(backgroundSprite);

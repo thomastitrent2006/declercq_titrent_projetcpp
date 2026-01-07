@@ -111,19 +111,35 @@ void APP::gererNouvellesArrivees() {
 }
 
 void APP::gererTrajectoires() {
-    if (!fileAttenteAtterrissage.empty() && towerReference != nullptr) {
-        std::string avionId = fileAttenteAtterrissage.front();
+    for (auto* avion : avionsSousControle) {
+        if (avion == nullptr) continue;
 
-        if (demanderAutorisationAtterrissage(avionId)) {
-            fileAttenteAtterrissage.pop();
+        EtatAvion etat = avion->getEtat();
 
-            for (auto* avion : avionsSousControle) {
-                if (avion->getNom() == avionId) {
-                    avion->setEtat(EtatAvion::ATTERRISSAGE);
+        if (etat == EtatAvion::ATTERRISSAGE) {
+            bool pisteOccupee = false;
 
-                    logAction("TRANSFERT_TWR", "Avion " + avionId + " autorisé à atterrir");
-                    break;
-                }
+            if (towerReference != nullptr) {
+                pisteOccupee = towerReference->isPisteOccupee();  // ← Utilise piste.occupee
+            }
+
+            if (pisteOccupee) {
+                avion->setEtat(EtatAvion::ATTENTE);
+                avion->setCentreAttente(centreAeroport);
+                std::cout << "[" << avion->getNom() << "] Piste occupée - Mise en attente\n";
+            }
+        }
+
+        if (etat == EtatAvion::ATTENTE) {
+            bool pisteOccupee = false;
+
+            if (towerReference != nullptr) {
+                pisteOccupee = towerReference->isPisteOccupee();
+            }
+
+            if (!pisteOccupee) {
+                avion->setEtat(EtatAvion::ATTERRISSAGE);
+                std::cout << "[" << avion->getNom() << "] Piste libre - Autorisation d'atterrir\n";
             }
         }
     }
@@ -158,24 +174,26 @@ void APP::gererDeparts() {
 
         EtatAvion etat = avion->getEtat();
         Position pos = avion->getPosition();
-        double distance = pos.distanceTo(centreAeroport);
 
-       
-        if (etat == EtatAvion::MONTEE && pos.altitude > 3000.0) {
-            avionsARetirer.push_back(avion);
-        }
-
-        
-        if (etat == EtatAvion::CROISIERE && distance > 55000.0) {
-            avionsARetirer.push_back(avion);
+        // Si l'avion est en CROISIERE et loin (> 55 km)
+        if (etat == EtatAvion::CROISIERE) {
+            double distance = pos.distanceTo(centreAeroport);
+            if (distance > 55000.0) {
+                avionsARetirer.push_back(avion);
+            }
         }
     }
 
-    // Retirer les avions de la liste
+    // Retirer les avions de l'APP ET les redonner au CCR
     for (auto* avion : avionsARetirer) {
         auto it = std::find(avionsSousControle.begin(), avionsSousControle.end(), avion);
         if (it != avionsSousControle.end()) {
             avionsSousControle.erase(it);
+
+            // ✅ REDONNER L'AVION AU CCR
+            if (ccrReference != nullptr) {
+                ccrReference->ajouterAvion(avion);
+            }
         }
     }
 }

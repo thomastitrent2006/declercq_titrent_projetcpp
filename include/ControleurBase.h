@@ -51,6 +51,10 @@ public:
     void envoyerMessage(const Message& msg);
     std::vector<Message> getMessagesRecus() const;
 
+    std::vector<Avion*>& getAvionsSousControle() {
+        return avionsSousControle;
+    }
+
     // Démarrage et arrêt du thread
     void demarrer();
     void arreter();

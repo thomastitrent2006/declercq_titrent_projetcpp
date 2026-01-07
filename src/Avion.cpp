@@ -104,10 +104,6 @@ void Avion::choisirNouvelleDestination() {
         return;
     }
 
-    // DEBUG : Afficher position actuelle
-    std::cout << "[" << nom << "] Position actuelle: ("
-        << (int)(position.x / 1000) << ", " << (int)(position.y / 1000) << ") km\n";
-
     if (destinationsPossibles.size() == 1) {
         destination = destinationsPossibles[0];
         cap = calculerCap(destination);
@@ -122,25 +118,16 @@ void Avion::choisirNouvelleDestination() {
 
     std::vector<Position> destinationsValides;
 
-    // DEBUG : Vérifier toutes les destinations
+    
     for (const auto& dest : destinationsPossibles) {
         double distance = position.distanceTo(dest);
-        std::cout << "[" << nom << "]   Dest (" << (int)(dest.x / 1000) << ", "
-            << (int)(dest.y / 1000) << ") km -> distance = "
-            << (int)(distance / 1000) << " km\n";
-
-        if (distance > 50000.0) {  // > 50 km
+        if (distance > 50000.0) {
             destinationsValides.push_back(dest);
-            std::cout << "[" << nom << "]     -> VALIDE\n";
-        }
-        else {
-            std::cout << "[" << nom << "]     -> TROP PROCHE\n";
         }
     }
 
     if (destinationsValides.empty()) {
-        std::cout << "[" << nom << "] AUCUNE destination valide ! Choix de la plus eloignee\n";
-
+      
         double maxDistance = 0.0;
         Position destinationLaPlusLoin;
 
@@ -153,9 +140,6 @@ void Avion::choisirNouvelleDestination() {
         }
 
         destination = destinationLaPlusLoin;
-        std::cout << "[" << nom << "]   -> Choisie: (" << (int)(destination.x / 1000)
-            << ", " << (int)(destination.y / 1000) << ") km (distance = "
-            << (int)(maxDistance / 1000) << " km)\n";
     }
     else {
         std::uniform_int_distribution<> dis(0, destinationsValides.size() - 1);
@@ -199,6 +183,10 @@ void Avion::update(double dt) {
         updateApproche(dt);
         break;
 
+    case EtatAvion::ATTENTE:      
+        updateAttente(dt);
+        break;
+
     case EtatAvion::ATTERRISSAGE:
         updateAtterrissage(dt);
         break;
@@ -210,7 +198,7 @@ void Avion::update(double dt) {
 }
 
 void Avion::updateParking(double dt) {
-    // ✅ FORCER vitesse = 0 dès l'entrée en parking
+    
     vitesse = 0.0;
     
     if (!enParking) {
@@ -244,7 +232,7 @@ void Avion::updateParking(double dt) {
         
         std::cout << "[" << nom << "] Decollage numero " << nombreVols << "\n";
         
-        // ✅ RÉINITIALISER tous les paramètres avant décollage
+        
         vitesse = 0.0;
         position.altitude = 0.0;
         altitude_cible = 10000.0;
@@ -318,7 +306,7 @@ void Avion::updateCroisiere(double dt) {
 
     double distance_restante = distanceVers(destination);
 
-    if (distance_restante < 5000.0) {  // 5 km
+    if (distance_restante < 5000.0) {  
         vitesse = 0;
         position = destination;
         setEtat(EtatAvion::PARKING);
@@ -356,13 +344,6 @@ void Avion::updateDescente(double dt) {
         return;
     }
 
-    // Debug
-    static int compteur = 0;
-    if (compteur++ % 60 == 0) {
-        std::cout << "[" << nom << "] DESCENTE: altitude=" << (int)position.altitude
-            << "m, distance=" << (int)(distance_dest / 1000) << "km\n";
-    }
-
     if (position.altitude <= 1000) {
         setEtat(EtatAvion::APPROCHE);
     }
@@ -384,8 +365,7 @@ void Avion::updateApproche(double dt) {
 
     double distance_dest = distanceVers(destination);
 
-    // ✅ AJOUT : Si arrivé à destination, aller directement en PARKING
-    if (distance_dest < 5000.0) {  // 5 km
+    if (distance_dest < 5000.0) {
         vitesse = 0;
         position = destination;
         position.altitude = 0;
@@ -394,7 +374,9 @@ void Avion::updateApproche(double dt) {
         return;
     }
 
-    if (position.altitude <= 100) {
+    
+    if (position.altitude <= 500) {
+        
         setEtat(EtatAvion::ATTERRISSAGE);
     }
 }
@@ -443,7 +425,34 @@ void Avion::afficherEtat() const {
 
 
 bool Avion::volTermine() const {
-    // Arrêter si proche de la destination (< 5 km)
+    
     double distance = distanceVers(destination);
     return distance < 5000.0;
+}
+
+void Avion::updateAttente(double dt) {
+    // L'avion tourne en cercle autour de la destination
+    // Vitesse angulaire : 1 tour complet en ~120 secondes
+    double vitesse_angulaire = (2.0 * M_PI) / 120.0;  // radians par seconde
+
+    angle_attente += vitesse_angulaire * dt;
+
+    // Garder l'angle entre 0 et 2π
+    if (angle_attente > 2.0 * M_PI) {
+        angle_attente -= 2.0 * M_PI;
+    }
+
+    // Calculer la position sur le cercle
+    position.x = centre_attente.x + rayon_attente * cos(angle_attente);
+    position.y = centre_attente.y + rayon_attente * sin(angle_attente);
+
+    // Maintenir l'altitude constante (2000m en attente)
+    position.altitude = 2000.0;
+
+    // Vitesse réduite en attente
+    vitesse = 80.0;
+
+    // Cap tangent au cercle (perpendiculaire au rayon)
+    cap = (angle_attente * 180.0 / M_PI) + 90.0;
+    if (cap > 360.0) cap -= 360.0;
 }

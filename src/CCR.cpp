@@ -114,9 +114,8 @@ void CCR::processLogic() {
 
     gererSeparation();
     gererFlux();
-    recupererAvionsEnCroisiere();
-
     transfererVersAPP();
+    recupererAvionsEnCroisiere();  
 }
 
 void CCR::gererSeparation() {
@@ -269,50 +268,41 @@ void CCR::afficherEspaceAerien() const {
     std::cout << "===================\n";
 }
 void CCR::recupererAvionsEnCroisiere() {
-    std::lock_guard<std::mutex> lock(mtx);
+   
 
-    // Parcourir tous les aéroports
     for (auto& pair : aeroports) {
         Aeroport& aeroport = pair.second;
 
-        if (aeroport.controleurApproche != nullptr) {
-            APP* app = aeroport.controleurApproche;
+        if (aeroport.controleurApproche == nullptr) continue;
 
-            // Récupérer les avions sous contrôle de l'APP
-            const std::vector<Avion*>& avionsAPP = app->getAvionsSousControle();
+        std::vector<Avion*>& avionsAPP = aeroport.controleurApproche->getAvionsSousControle();
 
-            std::vector<Avion*> avionsARecuperer;
+        for (auto* avion : avionsAPP) {
+            if (avion == nullptr) continue;
 
-            // Identifier les avions qui ont décollé et sont en montée/croisière
-            for (auto* avion : avionsAPP) {
-                EtatAvion etat = avion->getEtat();
+            EtatAvion etat = avion->getEtat();
 
-                // Si l'avion est en montée ou croisière, il sort de la zone APP
-                if (etat == EtatAvion::MONTEE || etat == EtatAvion::CROISIERE) {
-                    Position pos = avion->getPosition();
+            // Si l'avion est en CROISIERE
+            if (etat == EtatAvion::CROISIERE) {
+                Position pos = avion->getPosition();
+                double distance = pos.distanceTo(aeroport.position);
 
-                    // Vérifier si l'avion est sorti de la zone d'approche
-                    if (!app->estDansZone(pos)) {
-                        avionsARecuperer.push_back(avion);
+                // Si l'avion est loin de l'aéroport (> 60 km)
+                if (distance > 60000.0) {
+                    // Vérifier s'il n'est pas déjà dans le CCR
+                    bool dejaDansCCR = false;
+                    for (auto* a : avionsSousControle) {
+                        if (a->getNom() == avion->getNom()) {
+                            dejaDansCCR = true;
+                            break;
+                        }
                     }
-                }
-            }
 
-            // Transférer les avions de l'APP vers le CCR
-            for (auto* avion : avionsARecuperer) {
-                logAction("RECUPERATION_AVION",
-                    "Avion " + avion->getNom() + " récupéré depuis APP " +
-                    aeroport.nom + " - État: " + avion->getEtatString());
-
-                // Retirer de l'APP
-                app->retirerAvion(avion->getNom());
-
-                // Ajouter au CCR
-                ajouterAvion(avion);
-
-                // Mettre l'avion en état CROISIERE s'il ne l'est pas déjà
-                if (avion->getEtat() != EtatAvion::CROISIERE) {
-                    avion->setEtat(EtatAvion::CROISIERE);
+                    if (!dejaDansCCR) {
+                        ajouterAvion(avion);
+                        logAction("RECUPERATION_AVION",
+                            "Avion " + avion->getNom() + " récupéré en croisière");
+                    }
                 }
             }
         }

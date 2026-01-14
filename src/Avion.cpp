@@ -30,7 +30,7 @@ Avion::Avion(const std::string& nom, const Position& pos_depart,
     enParking(false),
     tempsAttenteParking(5) {
 
-    // ✅ UTILISER LA MÊME LOGIQUE que choisirNouvelleDestination()
+
     if (!destinationsPossibles.empty()) {
         // Créer une liste de destinations DIFFÉRENTES de la position de départ
         std::vector<Position> destinationsValides;
@@ -93,7 +93,7 @@ void Avion::demarrer() {
             update(dt*3.0);
         }
 
-        // Petite pause pour ne pas surcharger le CPU (60 FPS)
+       
             std::this_thread::sleep_for(std::chrono::milliseconds(16));
     }
 }
@@ -430,7 +430,7 @@ bool Avion::volTermine() const {
     return distance < 5000.0;
 }
 
-void Avion::updateAttente(double dt) {
+/*void Avion::updateAttente(double dt) {
     // L'avion tourne en cercle autour de la destination
     // Vitesse angulaire : 1 tour complet en ~120 secondes
     double vitesse_angulaire = (2.0 * M_PI) / 120.0;  // radians par seconde
@@ -455,4 +455,4 @@ void Avion::updateAttente(double dt) {
     // Cap tangent au cercle (perpendiculaire au rayon)
     cap = (angle_attente * 180.0 / M_PI) + 90.0;
     if (cap > 360.0) cap -= 360.0;
-}
+}*/

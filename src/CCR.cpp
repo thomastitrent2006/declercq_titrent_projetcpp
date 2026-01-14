@@ -85,10 +85,10 @@ void CCR::creerVol(const std::string& nomAvion, const std::string& depart,
     Position posArrivee = itArrivee->second.position;
     posArrivee.altitude = altitudeCroisiere;
 
-    std::vector<Position> destinations = { posArrivee };  // Pour l'instant, une seule destination
+    std::vector<Position> destinations = { posArrivee };  
     Avion* avion = new Avion(nomAvion, posDepart, destinations);
 
-    // Utiliser CROISIERE au lieu de EN_ROUTE qui n'existe pas dans l'enum
+   
     avion->setEtat(EtatAvion::CROISIERE);
 
 
@@ -168,7 +168,7 @@ void CCR::transfererVersAPP() {
 
     for (auto* avion : avionsSousControle) {
         Position pos = avion->getPosition();
-        Position dest = avion->getDestination();  // ← Récupérer la destination
+        Position dest = avion->getDestination();  
 
         // Chercher l'aéroport de destination
         for (auto& pair : aeroports) {
@@ -325,7 +325,6 @@ void CCR::recevoirAvionDepuisAPP(Avion* avion, const std::string& aeroportDepart
         }
     }
 
-    // Ajouter l'avion au CCR
     ajouterAvion(avion);
 
     // S'assurer qu'il est en croisière

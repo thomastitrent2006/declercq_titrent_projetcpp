@@ -97,7 +97,7 @@ void TWR::processLogic() {
         piste.avionActuel = "";
     }
 
-    // Log existant
+   
     if (piste.occupee) {
         std::cout << "[TWR " << nom << "] Piste occupee [" << piste.avionActuel
             << "] | " << avionsSousControle.size() << " avions sous controle\n";

@@ -53,10 +53,10 @@ public:
     void libererParking(const std::string& parkingId);
 
     bool isPisteOccupee() const {
-        return pisteOccupee;  // Variable membre existante
+        return pisteOccupee;  
     }
     void occuperPiste() { pisteOccupee = true; }
     void libererPiste() { pisteOccupee = false; }
 };
 
-#endif // TWR_H
+#endif 

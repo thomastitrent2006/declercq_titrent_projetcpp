@@ -317,10 +317,10 @@ void initializeSimulation() {
                 try {
                     EtatAvion etat = planes[i]->getEtat();
 
-                    // ✅ SI EN PARKING, NE PAS DESSINER
+                    
                     if (etat == EtatAvion::PARKING) {
-                        planeSprites[i].setColor(Color(255, 255, 255, 0));  // Invisible
-                        continue;  // Passer au prochain avion
+                        planeSprites[i].setColor(Color(255, 255, 255, 0));  
+                        continue;  
                     }
 
                     Position posAvion = planes[i]->getPosition();
@@ -345,11 +345,11 @@ void initializeSimulation() {
                         planeSprites[i].setTexture(airplaneCyan);
                     }
 
-                    // ✅ Recentrer l'origine après changement de texture
+                    
                     FloatRect bounds = planeSprites[i].getLocalBounds();
                     planeSprites[i].setOrigin(bounds.size / 2.0f);
 
-                    // ✅ Rendre visible
+                    
                     planeSprites[i].setColor(Color::White);
                 }
                 catch (const std::exception& e) {

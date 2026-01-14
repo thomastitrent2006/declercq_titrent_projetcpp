@@ -7,7 +7,7 @@
 #include <string>
 #include <mutex>
 
-// Déclaration forward pour éviter les dépendances circulaires
+
 class TWR;
 class CCR;
 

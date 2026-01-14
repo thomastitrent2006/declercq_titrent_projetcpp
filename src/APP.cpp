@@ -120,7 +120,7 @@ void APP::gererTrajectoires() {
             bool pisteOccupee = false;
 
             if (towerReference != nullptr) {
-                pisteOccupee = towerReference->isPisteOccupee();  // ← Utilise piste.occupee
+                pisteOccupee = towerReference->isPisteOccupee();  
             }
 
             if (pisteOccupee) {
@@ -190,7 +190,7 @@ void APP::gererDeparts() {
         if (it != avionsSousControle.end()) {
             avionsSousControle.erase(it);
 
-            // ✅ REDONNER L'AVION AU CCR
+            
             if (ccrReference != nullptr) {
                 ccrReference->ajouterAvion(avion);
             }
@@ -252,15 +252,15 @@ void APP::transfererAvionVersCCR(Avion* avion) {
 
     std::lock_guard<std::mutex> lock(mtx);
 
-    // Vérifier que l'avion est bien en dehors de notre zone
+    
     if (!estDansZone(avion->getPosition())) {
         logAction("TRANSFERT_CCR",
             "Avion " + avion->getNom() + " transféré au CCR");
 
-        // Notifier le CCR
+    
         ccrReference->recevoirAvionDepuisAPP(avion, nom);
 
-        // Retirer l'avion de notre contrôle
+        
         retirerAvion(avion->getNom());
     }
 }

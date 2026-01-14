@@ -13,7 +13,7 @@
 struct Message {
     std::string expediteur;
     std::string destinataire;
-    std::string type;      // "DEMANDE_ATTERRISSAGE", "AUTORISATION", etc.
+    std::string type;      
     std::string avionId;
     std::string contenu;
     long timestamp = 0;

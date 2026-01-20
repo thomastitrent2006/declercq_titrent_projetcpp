@@ -148,7 +148,7 @@ public:
         simulationDemarree = true;
     }
 
-    void updateAttente(double dt);
+   /* void updateAttente(double dt);*/
 
     void setCentreAttente(const Position& centre) {
         centre_attente = centre;

@@ -183,9 +183,6 @@ void Avion::update(double dt) {
         updateApproche(dt);
         break;
 
-    case EtatAvion::ATTENTE:      
-        updateAttente(dt);
-        break;
 
     case EtatAvion::ATTERRISSAGE:
         updateAtterrissage(dt);
